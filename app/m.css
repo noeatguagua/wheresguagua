@@ -21,7 +21,7 @@ body {
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
 
-.app { position: fixed; top: 0; bottom: 0; left: 50%; width: var(--aw); transform: translateX(-50%); }
+.app { position: fixed; top: var(--app-top, 0px); bottom: auto; height: var(--app-h, 100dvh); left: 50%; width: var(--aw); transform: translateX(-50%); }
 .frame {
   position: absolute; overflow: hidden;
   top: max(var(--inset), env(safe-area-inset-top)); bottom: max(var(--inset), env(safe-area-inset-bottom));
@@ -64,6 +64,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 #home .head { padding: calc(10 * var(--u)) calc(15 * var(--u)) 0; }
 #home .sub { margin: calc(9 * var(--u)) 0 0 calc(4 * var(--u)); font-size: calc(17 * var(--u)); letter-spacing: -.01em; }
 #home .scroll { display: flex; flex-direction: column; }
+.kb #home .form { padding-bottom: calc(320 * var(--u)); }   /* 鍵盤開啟時留捲動空間，讓欄位能捲到可視範圍頂端 */
 #home .form { padding: calc(24 * var(--u)) calc(40.5 * var(--u)) calc(55 * var(--u)) calc(47 * var(--u)); flex: 1 0 auto; display: flex; flex-direction: column; }
 #home .form-top { flex: 1 1 auto; }
 .modes { display: flex; align-items: center; gap: calc(10 * var(--u)); margin: 0 0 calc(14 * var(--u)) calc(9 * var(--u)); font-size: calc(17 * var(--u)); white-space: nowrap; }

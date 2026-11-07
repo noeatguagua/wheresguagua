@@ -59,6 +59,7 @@
   });
 
   /* ---------- 首頁：欄位與站名建議 ---------- */
+  var COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   var F = {
     from: { input: $('i-from'), code: $('c-from'), field: $('f-from'), list: $('l-from'), items: [], active: -1 },
     to: { input: $('i-to'), code: $('c-to'), field: $('f-to'), list: $('l-to'), items: [], active: -1 }
@@ -119,12 +120,20 @@
     f.list.innerHTML = html;
     f.list.classList.add('open');
     f.input.setAttribute('aria-expanded', 'true');
-    /* 不超出外框：往下開的取欄位下方剩餘高度，往上開的取欄位上方 */
-    var fr = document.querySelector('.frame').getBoundingClientRect(), fb = f.field.getBoundingClientRect();
-    var avail = f.list.classList.contains('up') ? fb.top - fr.top - 14 : fr.bottom - fb.bottom - 14;
-    f.list.style.setProperty('--mh', Math.max(120, Math.floor(avail)) + 'px');
+    place(w);
+    document.querySelector('.app').classList.toggle('kb', COARSE);
   }
-  function closeList(w) { var f = F[w]; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); }
+  /* 選單的方向與最大高度：以 visualViewport（扣掉鍵盤）與外框的交集為準；下方空間不足就改往上開 */
+  function place(w) {
+    var f = F[w]; if (!f.list.classList.contains('open')) return;
+    var vv = window.visualViewport, vt = vv ? vv.offsetTop : 0, vb = vt + (vv ? vv.height : innerHeight);
+    var fr = document.querySelector('.frame').getBoundingClientRect(), fb = f.field.getBoundingClientRect();
+    var lo = Math.max(fr.top, vt) + 8, hi = Math.min(fr.bottom, vb) - 8;
+    var below = hi - fb.bottom - 8, above = fb.top - lo - 8, up = below < 190 && above > below;
+    f.list.classList.toggle('up', up);
+    f.list.style.setProperty('--mh', Math.max(110, Math.floor(up ? above : below)) + 'px');
+  }
+  function closeList(w) { var f = F[w]; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); }
   function move(w, d) {
     var f = F[w]; if (!f.items.length) return;
     f.active = (f.active + d + f.items.length) % f.items.length;
@@ -139,7 +148,7 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 250); });
+    f.input.addEventListener('focus', function () { f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
     f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
     f.input.addEventListener('blur', function () {
       setTimeout(function () {
@@ -308,6 +317,18 @@
     });
     $('live').textContent = '第 ' + (k + 1) + ' 段，共 ' + m.rides.length + ' 段';
   }
+
+  /* ---------- 鍵盤：讓 App 高度跟著「可視範圍」（iOS 不縮小版面，只縮小 visualViewport） ---------- */
+  (function () {
+    var vv = window.visualViewport, root = document.documentElement;
+    if (!vv) return;
+    function sync() {
+      root.style.setProperty('--app-h', vv.height + 'px');
+      root.style.setProperty('--app-top', vv.offsetTop + 'px');
+      ['from', 'to'].forEach(place);
+    }
+    vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync);
+  })();
 
   /* ---------- 初始化 ---------- */
   var last = load('gg.v1', null), mo = load('gg.modes', null);
