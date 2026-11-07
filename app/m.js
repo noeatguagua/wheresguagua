@@ -276,8 +276,9 @@
       var t = carText(rd);
       if (x.transfer) nodes += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, false, x.transfer.toLine) + '<span>轉乘</span></div></div>';
       nodes += '<div class="node link"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, false, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>往</span>' + (nextT ? pill(rd.to, rd.line, false, nextT.toLine) : pill(rd.to, rd.line)) + '</div>' +
-        '<p class="note">' + esc(t.l1) + ' ' + esc(t.l2) + '</p>' +
-        (t.sub ? '<p class="note sub">' + esc(t.sub) + '</p>' : '') + (t.warn ? '<p class="note sub warn">' + esc(t.warn) + '</p>' : '') + '</div>';
+        (t.sub ? '<p class="note sub first">' + esc(t.sub) + '</p>' : '') +
+        '<p class="note' + (t.sub ? ' after' : '') + '">' + esc(t.l1) + ' ' + esc(t.l2) + '</p>' +
+        (t.warn ? '<p class="note sub warn">' + esc(t.warn) + '</p>' : '') + '</div>';   /* 月台方向放主標上方 */
     });
     var ex = m.exit, lastLine = m.rides[m.rides.length - 1].ride.line;
     nodes += '<div class="node"><div class="line1">' + pill(ex.station, lastLine) + '<span>出站</span></div></div>';   /* 出口編號只在最後一頁顯示（依設計稿） */

@@ -151,6 +151,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .node .note { margin: calc(5 * var(--u)) 0 0; font-size: calc(16.5 * var(--u)); font-weight: 600; line-height: 1.5; padding-right: calc(4 * var(--u)); }
 .node .note.sub { font-size: calc(14.5 * var(--u)); font-weight: 500; opacity: .88; margin-top: calc(2 * var(--u)); }
 .node .note.warn { font-weight: 700; }
+.node .note.sub.first { margin-top: calc(5 * var(--u)); }   /* 月台方向在上，與站名列的間距同原本的主標 */
+.node .note.after { margin-top: calc(2 * var(--u)); }       /* 主標接在月台方向之後，間距同原本月台方向與主標 */
 .node .exits { margin: calc(4 * var(--u)) 0 0; font-size: calc(18 * var(--u)); font-weight: 600; }
 .alert { margin: calc(14 * var(--u)) calc(16 * var(--u)) 0 calc(11 * var(--u)); padding: calc(9 * var(--u)) calc(14 * var(--u)); border: var(--bw) solid #fff; border-radius: calc(16 * var(--u)); font-size: calc(14.5 * var(--u)); line-height: 1.5; font-weight: 600; background: rgba(0, 12, 130, .55); }
 .alert b { font-weight: 900; }
