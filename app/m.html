@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#000f9c">
+<link rel="preload" as="image" href="assets/splash.webp" type="image/webp" fetchpriority="high">
+<style>
+html,body{margin:0;background:#000f9c}
+#splash{--aw:min(100vw,480px);--u:calc(var(--aw)/414);position:fixed;inset:0;z-index:100;background:#000f9c;overflow:hidden;will-change:transform,opacity}
+/* 框的位置、粗細、圓角與首頁 .frame 完全相同，所以開機畫面的白框會與首頁的白框重疊 */
+#splash .sapp{position:absolute;top:0;bottom:0;left:50%;width:var(--aw);transform:translateX(-50%)}
+#splash .sframe{position:absolute;overflow:hidden;top:max(calc(18*var(--u)),env(safe-area-inset-top));bottom:max(calc(18*var(--u)),env(safe-area-inset-bottom));left:calc(18*var(--u));right:calc(18*var(--u));border:calc(1.5*var(--u)) solid #fff;border-radius:calc(22*var(--u))}
+#splash img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block}
+</style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
@@ -14,10 +23,12 @@
 <title>瓜瓜去哪儿</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&display=swap"></noscript>
 <link rel="stylesheet" href="m.css">
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sapp"><div class="sframe"><img src="assets/splash.webp" alt="" fetchpriority="high" decoding="async"></div></div></div>
 <div class="app">
   <div class="frame">
     <div class="blobs" aria-hidden="true"></div>
@@ -71,6 +82,24 @@
   </div>
 </div>
 <div class="sr" id="live" aria-live="polite"></div>
+<script>
+(function () {
+  var sp = document.getElementById('splash'), t0 = Date.now(), done = false;
+  function reveal() {
+    if (done) return; done = true;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { sp.style.transition = 'opacity .2s'; sp.style.opacity = 0; setTimeout(function () { sp.remove(); }, 250); return; }
+    var anim = sp.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.7)', opacity: 0 }],
+      { duration: 900, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' });   // 以畫面中心為軸心，整張放大並漸淡
+    sp.style.pointerEvents = 'none';
+    anim.onfinish = function () { sp.remove(); };
+  }
+  function ready() { setTimeout(reveal, Math.max(0, 800 - (Date.now() - t0))); }
+  function onLoad() { var f = document.fonts && document.fonts.ready; if (f) Promise.race([f, new Promise(function (r) { setTimeout(r, 2500); })]).then(ready); else ready(); }
+  if (document.readyState === 'complete') onLoad(); else window.addEventListener('load', onLoad);
+  setTimeout(reveal, 6000);                      // 保險：最久 6 秒一定進入畫面
+})();
+</script>
 <script src="data.js"></script>
 <script src="data.private.js" onerror="void 0"></script>
 <script src="engine.js"></script>
