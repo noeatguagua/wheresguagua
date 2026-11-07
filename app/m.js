@@ -332,6 +332,30 @@
     vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync);
   })();
 
+  /* ---------- PWA：安裝到桌面 ---------- */
+  (function () {
+    var btn = $('install'), sheet = $('sheet'), deferred = null;
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    if (!standalone) btn.hidden = false;
+    window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); deferred = ev; });   // Android／桌面 Chrome：可直接跳出安裝視窗
+    window.addEventListener('appinstalled', function () { btn.hidden = true; sheet.hidden = true; deferred = null; });
+    var iOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    btn.addEventListener('click', function () {
+      if (deferred) { deferred.prompt(); deferred.userChoice.then(function () { deferred = null; }); return; }
+      $('sheet-steps').innerHTML = iOS
+        ? '<li>用 <b>Safari</b> 開啟本頁</li><li>點下方的<b>分享</b>按鈕</li><li>選<b>「加入主畫面」</b>，再按「新增」</li>'
+        : '<li>點瀏覽器右上角的<b>選單</b></li><li>選<b>「安裝應用程式」</b>或<b>「加到主畫面」</b></li><li>（若沒有這個選項，請改用 Chrome 開啟）</li>';
+      sheet.hidden = false; $('sheet-ok').focus();
+    });
+    function close() { sheet.hidden = true; btn.focus(); }
+    $('sheet-ok').addEventListener('click', close);
+    sheet.addEventListener('pointerdown', function (ev) { if (ev.target === sheet) close(); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !sheet.hidden) close(); });
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* 不支援或失敗：照常使用 */ }); });
+    }
+  })();
+
   /* ---------- 初始化 ---------- */
   var last = load('gg.v1', null), mo = load('gg.modes', null);
   if (last) { if (ST.has(last.from)) setField('from', last.from); if (ST.has(last.to)) setField('to', last.to); }

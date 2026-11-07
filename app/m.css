@@ -205,3 +205,16 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   .info .txt { line-height: 1.9; }
 }
 .info img.es { width: calc(84 * var(--u)); height: auto; max-height: calc(93 * var(--u)); object-fit: contain; }
+
+/* ---------- 安裝到桌面（PWA）：首頁右上角圖示與說明 ---------- */
+.install { position: absolute; z-index: 3; top: calc(14 * var(--u)); right: calc(14 * var(--u)); width: calc(44 * var(--u)); height: calc(44 * var(--u)); border: var(--bw) solid #fff; border-radius: 50%; display: grid; place-items: center; transition: background .2s, transform .12s var(--ease); }
+.install img { width: calc(21 * var(--u)); height: auto; display: block; }
+.install:active { transform: scale(.92); background: rgba(255, 255, 255, .2); }
+.install:focus-visible { outline: calc(3 * var(--u)) solid #fff; outline-offset: calc(3 * var(--u)); }
+.sheet { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: calc(30 * var(--u)); background: rgba(0, 6, 80, .72); }
+.sheet[hidden], .install[hidden] { display: none; }
+.sheet:not([hidden]) { animation: enter .3s var(--ease) both; }
+.sheet-box { width: min(100%, calc(340 * var(--u))); padding: calc(24 * var(--u)) calc(22 * var(--u)) calc(22 * var(--u)); border: var(--bw) solid #fff; border-radius: calc(26 * var(--u)); background: var(--navy); }
+.sheet-box h2 { margin: 0 0 calc(12 * var(--u)); font-size: calc(24 * var(--u)); }
+.sheet-box ol { margin: 0 0 calc(18 * var(--u)); padding-left: calc(24 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; line-height: 1.8; }
+.sheet-box .btn { width: 100%; height: calc(52 * var(--u)); font-size: calc(19 * var(--u)); }

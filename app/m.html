@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#000f9c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="瓜瓜去哪儿">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>瓜瓜去哪儿</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +24,9 @@
 
     <!-- 1. 首頁：輸入起訖站 → 白色按鈕「路線生成」 -->
     <section class="screen active" id="home" data-screen="home" aria-labelledby="home-h" tabindex="-1">
+      <button type="button" class="install" id="install" hidden aria-label="安裝到手機桌面">
+        <img src="assets/icons/install.png" alt="" aria-hidden="true">
+      </button>
       <div class="scroll">
         <div class="head">
           <h1 class="title" id="home-h">瓜瓜<br>去哪<small>儿</small></h1>
@@ -51,6 +61,13 @@
 
     <!-- 3、4. 逐段步驟：白色按鈕「下一步」／「結束」 -->
     <section class="screen" id="step" data-screen="step" aria-labelledby="st-h" tabindex="-1"></section>
+  </div>
+</div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t" hidden>
+  <div class="sheet-box">
+    <h2 id="sheet-t">安裝到手機桌面</h2>
+    <ol id="sheet-steps"></ol>
+    <button type="button" class="btn" id="sheet-ok">知道了</button>
   </div>
 </div>
 <div class="sr" id="live" aria-live="polite"></div>

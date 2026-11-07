@@ -1,0 +1,18 @@
+{
+  "id": "./m.html",
+  "name": "瓜瓜去哪儿",
+  "short_name": "瓜瓜去哪儿",
+  "description": "臺北捷運無障礙路線規劃：給你最佳搭乘路線與建議車廂",
+  "lang": "zh-Hant",
+  "start_url": "./m.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000f9c",
+  "theme_color": "#000f9c",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
