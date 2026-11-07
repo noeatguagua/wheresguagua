@@ -193,8 +193,8 @@
     $('arrow').classList.toggle('flip');
   });
 
-  /* 「選擇上下樓」→ 引擎的 mode：只勾電梯＝wheel（輪椅／嬰兒車，只走電梯）；勾手扶梯＝walk（電梯或手扶梯皆可）；都不勾＝比照電梯（較安全）。 */
-  function modeOf() { var el = $('m-el').checked, es = $('m-es').checked; return es ? 'walk' : 'wheel'; }
+  /* 「選擇上下樓設施」→ 引擎的 mode：只勾電梯＝wheel（輪椅／嬰兒車，只走電梯）；勾手扶梯＝walk；兩個都勾、或兩個都不勾＝walk（電梯或手扶梯皆可）。 */
+  function modeOf() { var el = $('m-el').checked, es = $('m-es').checked; return (el && !es) ? 'wheel' : 'walk'; }
   ['m-el', 'm-es'].forEach(function (id) { $(id).addEventListener('change', function () { save('gg.modes', { el: $('m-el').checked, es: $('m-es').checked }); }); });
 
   $('form').addEventListener('submit', function (ev) {
