@@ -148,16 +148,17 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
+    f.input.addEventListener('focus', function () { closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
     f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
+    /* 選單的開關不再綁輸入框焦點：iOS 再點輸入框、或收鍵盤都會讓它失焦，那時選單必須留著讓人滑。
+       只在「選了站」「點選單與欄位以外」「Esc」時才收起（見 choose、document pointerdown、keydown）。 */
     f.input.addEventListener('blur', function () {
       setTimeout(function () {
-        if (f.hold) return;            // 手指正在選單上（捲動）：保持開啟，點選單以外的地方再收起
-        closeList(w);
         var r = E.resolveStation(f.input.value);
-        if (r && r.name) setField(w, r.name); else if (!f.input.value.trim()) setField(w, null);
+        if (r && r.name && !f.list.classList.contains('open')) setField(w, r.name);
       }, 120);
     });
+    f.field.addEventListener('click', function () { if (!f.list.classList.contains('open')) renderList(w); });
     f.input.addEventListener('keydown', function (ev) {
       if (ev.key === 'ArrowDown') { ev.preventDefault(); move(w, 1); }
       else if (ev.key === 'ArrowUp') { ev.preventDefault(); move(w, -1); }
@@ -170,8 +171,6 @@
     });
     /* 手機：用 click 選取（手指拖曳捲動不會產生 click），不要綁 pointerdown；mousedown 只防止輸入框失焦 */
     f.list.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
-    f.list.addEventListener('pointerdown', function () { f.hold = true; });
-    ['pointerup', 'pointercancel'].forEach(function (t) { f.list.addEventListener(t, function () { setTimeout(function () { f.hold = false; }, 400); }); });
     f.list.addEventListener('click', function (ev) {
       var chip = ev.target.closest('[data-f]');
       if (chip) { listFilter = chip.dataset.f; renderList(w); f.list.scrollTop = 0; return; }

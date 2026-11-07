@@ -13,7 +13,7 @@
   --ease: cubic-bezier(.22, .8, .24, 1);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--navy); }
+html, body { margin: 0; height: 100%; background: var(--navy); overscroll-behavior: none; }
 body {
   color: var(--ink); font-family: var(--serif); font-weight: 700;
   -webkit-text-size-adjust: 100%; overflow: hidden; overscroll-behavior: none;
