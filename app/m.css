@@ -109,6 +109,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .suggest li { display: flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(9 * var(--u)) calc(18 * var(--u)); min-height: calc(46 * var(--u)); cursor: pointer; font-size: calc(19 * var(--u)); }
 .suggest li[role="option"] + li[role="option"] { border-top: calc(1 * var(--u)) solid rgba(255, 255, 255, .22); }
 .suggest li[aria-selected="true"], .suggest li[role="option"]:active { background: rgba(255, 255, 255, .18); }
+.suggest li.cur { background: rgba(255, 255, 255, .14); }
+.suggest li.cur .nm::after { content: " ✓"; }
 .suggest .code { width: 3.2em; font-size: calc(14 * var(--u)); font-weight: 600; letter-spacing: .05em; opacity: .8; }
 .suggest .nm { flex: 1; }
 .suggest .none { cursor: default; font-weight: 500; font-size: calc(15 * var(--u)); }

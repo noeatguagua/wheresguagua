@@ -97,7 +97,8 @@
   }
 
   function renderList(w) {
-    var f = F[w], q = f.input.value, items = [], html = '';
+    /* 已選好站、還沒改字時，不拿站名當關鍵字（否則只剩那一站，無法換選）；使用者開始輸入才篩選 */
+    var f = F[w], q = f.dirty ? f.input.value : '', items = [], html = '';
     html += '<li class="chips" role="presentation">' + ['all'].concat(LINES).map(function (l) {
       return '<button type="button" class="chip' + (listFilter === l ? ' on' : '') + '" data-f="' + l + '" tabindex="-1">' +
         (l === 'all' ? '全部' : '<i style="background:' + LINE_VAR[l] + '"></i>' + esc(l.replace('線', ''))) + '</button>';
@@ -113,7 +114,7 @@
     rows.forEach(function (r) {
       if (r.l !== last) { last = r.l; html += '<li class="lh" role="presentation" style="background:' + LINE_VAR[r.l] + '">' + esc(r.l) + '</li>'; }
       items.push(r.n);
-      html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"><span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.n) + '</span></li>';
+      html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"' + (state[w] === r.n ? ' class="cur" aria-current="true"' : '') + '><span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.n) + '</span></li>';
     });
     if (!rows.length) html += '<li class="none" role="presentation">' + (q.trim() ? '找不到「' + esc(q.trim()) + '」' : '沒有車站') + '</li>';
     f.items = items; f.active = -1;
@@ -121,6 +122,7 @@
     f.list.classList.add('open');
     f.input.setAttribute('aria-expanded', 'true');
     place(w);
+    var cur = f.list.querySelector('.cur'); if (cur && !q) f.list.scrollTop = Math.max(0, cur.offsetTop - 120);
     document.querySelector('.app').classList.toggle('kb', COARSE);
   }
   /* 選單的方向與最大高度：以 visualViewport（扣掉鍵盤）與外框的交集為準；下方空間不足就改往上開 */
@@ -148,8 +150,8 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
-    f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
+    f.input.addEventListener('focus', function () { f.dirty = false; closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
+    f.input.addEventListener('input', function () { f.dirty = true; state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
     /* 選單的開關不再綁輸入框焦點：iOS 再點輸入框、或收鍵盤都會讓它失焦，那時選單必須留著讓人滑。
        只在「選了站」「點選單與欄位以外」「Esc」時才收起（見 choose、document pointerdown、keydown）。 */
     f.input.addEventListener('blur', function () {
@@ -158,7 +160,7 @@
         if (r && r.name && !f.list.classList.contains('open')) setField(w, r.name);
       }, 120);
     });
-    f.field.addEventListener('click', function () { if (!f.list.classList.contains('open')) renderList(w); });
+    f.field.addEventListener('click', function () { if (!f.list.classList.contains('open')) { f.dirty = false; renderList(w); } });
     f.input.addEventListener('keydown', function (ev) {
       if (ev.key === 'ArrowDown') { ev.preventDefault(); move(w, 1); }
       else if (ev.key === 'ArrowUp') { ev.preventDefault(); move(w, -1); }
