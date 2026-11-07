@@ -1,7 +1,7 @@
 /* 瓜瓜去哪儿 Service Worker：離線可開。
  * 策略：同源 GET 一律「網路優先、失敗才用快取」，所以網站更新後會立刻拿到新版，沒網路時才用上次的快取。
  * 改了預快取清單或策略時，請把 VERSION 加一。 */
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = 'guagua-' + VERSION;
 const PRECACHE = ['m.html', 'm.css', 'm.js', 'engine.js', 'data.js', 'data.private.js', 'manifest.webmanifest',
   'assets/bg.webp', 'assets/elevator.svg', 'assets/escalator.png',
