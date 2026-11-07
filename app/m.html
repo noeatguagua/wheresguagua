@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#000f9c">
+<title>瓜瓜去哪儿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&display=swap">
+<link rel="stylesheet" href="m.css">
+</head>
+<body>
+<div class="app">
+  <div class="frame">
+    <div class="blobs" aria-hidden="true"></div>
+
+    <!-- 1. 首頁：輸入起訖站 → 白色按鈕「路線生成」 -->
+    <section class="screen active" id="home" data-screen="home" aria-labelledby="home-h" tabindex="-1">
+      <div class="scroll">
+        <div class="head">
+          <h1 class="title" id="home-h">瓜瓜<br>去哪<small>儿</small></h1>
+          <p class="sub">輸入起站迄站,給你最佳搭乘路線</p>
+        </div>
+        <form class="form" id="form" autocomplete="off" novalidate>
+          <div class="form-top"></div>
+          <div class="modes" role="group" aria-labelledby="modes-l">
+            <span id="modes-l">選擇上下樓</span>
+            <label class="chk"><input type="checkbox" id="m-el"><span>電梯</span></label>
+            <label class="chk"><input type="checkbox" id="m-es"><span>手扶梯</span></label>
+          </div>
+          <div class="stack">
+            <label class="field" id="f-from"><span class="code" id="c-from"></span>
+              <input id="i-from" type="text" inputmode="search" enterkeyhint="next" placeholder="輸入起站" aria-label="起站" role="combobox" aria-expanded="false" aria-controls="l-from" aria-autocomplete="list"></label>
+            <ul class="suggest" id="l-from" role="listbox" aria-label="起站建議"></ul>
+          </div>
+          <div class="arrow" id="arrow"><button type="button" id="swap" aria-label="對調起站與迄站"><svg viewBox="0 0 24 18" aria-hidden="true"><path d="M0 0h24L12 18z" fill="#fff"/></svg></button></div>
+          <div class="stack">
+            <label class="field" id="f-to"><span class="code" id="c-to"></span>
+              <input id="i-to" type="text" inputmode="search" enterkeyhint="go" placeholder="輸入迄站" aria-label="迄站" role="combobox" aria-expanded="false" aria-controls="l-to" aria-autocomplete="list"></label>
+            <ul class="suggest up" id="l-to" role="listbox" aria-label="迄站建議"></ul>
+          </div>
+          <div class="err" id="err" role="alert"></div>
+          <button class="btn" type="submit" id="go">路線生成</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. 路線總覽：白色按鈕「確定行程」 -->
+    <section class="screen" id="overview" data-screen="overview" aria-labelledby="ov-h" tabindex="-1"></section>
+
+    <!-- 3、4. 逐段步驟：白色按鈕「下一步」／「結束」 -->
+    <section class="screen" id="step" data-screen="step" aria-labelledby="st-h" tabindex="-1"></section>
+  </div>
+</div>
+<div class="sr" id="live" aria-live="polite"></div>
+<script src="data.js"></script>
+<script src="data.private.js" onerror="void 0"></script>
+<script src="engine.js"></script>
+<script src="m.js"></script>
+</body>
+</html>
