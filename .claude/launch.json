@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "metro-app",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "app"],
+      "port": 8765
+    },
+    {
+      "name": "annotator",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["annotator/server.py"],
+      "port": 8766
+    }
+  ]
+}

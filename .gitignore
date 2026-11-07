@@ -1,0 +1,14 @@
+.secret/
+data/annotations_backup/
+__pycache__/
+node_modules/
+*.pyc
+.claude/settings.local.json
+# 單月 OD 原始 CSV（約 300 MB）不進版控
+data/od_*.csv
+
+# 車廂標記資料（不公開；見 LICENSE-DATA.md）
+data/annotations.json
+app/data.private.js
+tests/fixtures/data.frozen.js
+tests/golden/

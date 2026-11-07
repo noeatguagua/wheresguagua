@@ -1,0 +1,8 @@
+{
+  "name": "mrt-accessible",
+  "private": true,
+  "description": "捷運無礙行：路線引擎與前端（靜態頁面，無建置步驟）",
+  "scripts": {
+    "test": "node - < tests/golden.test.js"
+  }
+}
