@@ -102,7 +102,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   transition: max-height .26s var(--ease), opacity .2s, transform .26s var(--ease), visibility 0s .26s;
 }
 .suggest.open { max-height: min(var(--mh, 9999px), calc(300 * var(--u))); opacity: 1; visibility: visible; transform: none; overflow-y: auto; transition-delay: 0s; }
-.suggest { top: calc(100% + 8 * var(--u)); }
+.suggest { top: calc(100% + 8 * var(--u)); touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .suggest.up { top: auto; bottom: calc(100% + 8 * var(--u)); transform: translateY(calc(6 * var(--u))); }
 .suggest.up.open { transform: none; }
 .suggest li { display: flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(9 * var(--u)) calc(18 * var(--u)); min-height: calc(46 * var(--u)); cursor: pointer; font-size: calc(19 * var(--u)); }

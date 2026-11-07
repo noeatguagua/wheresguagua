@@ -143,6 +143,7 @@
     f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
     f.input.addEventListener('blur', function () {
       setTimeout(function () {
+        if (f.hold) return;            // 手指正在選單上（捲動）：保持開啟，點選單以外的地方再收起
         closeList(w);
         var r = E.resolveStation(f.input.value);
         if (r && r.name) setField(w, r.name); else if (!f.input.value.trim()) setField(w, null);
@@ -158,12 +159,21 @@
         if (pick) choose(w, pick);
       }
     });
-    f.list.addEventListener('pointerdown', function (ev) {
+    /* 手機：用 click 選取（手指拖曳捲動不會產生 click），不要綁 pointerdown；mousedown 只防止輸入框失焦 */
+    f.list.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+    f.list.addEventListener('pointerdown', function () { f.hold = true; });
+    ['pointerup', 'pointercancel'].forEach(function (t) { f.list.addEventListener(t, function () { setTimeout(function () { f.hold = false; }, 400); }); });
+    f.list.addEventListener('click', function (ev) {
       var chip = ev.target.closest('[data-f]');
-      if (chip) { ev.preventDefault(); listFilter = chip.dataset.f; renderList(w); f.list.scrollTop = 0; return; }
+      if (chip) { listFilter = chip.dataset.f; renderList(w); f.list.scrollTop = 0; return; }
       var li = ev.target.closest('[role=option]'); if (!li) return;
-      ev.preventDefault(); choose(w, f.items[+li.id.slice(f.list.id.length + 1)]);
+      choose(w, f.items[+li.id.slice(f.list.id.length + 1)]);
     });
+  });
+
+  document.addEventListener('pointerdown', function (ev) {
+    if (ev.target.closest('.stack')) return;
+    ['from', 'to'].forEach(function (w) { if (F[w].list.classList.contains('open')) { closeList(w); var r = E.resolveStation(F[w].input.value); if (r && r.name) setField(w, r.name); } });
   });
 
   $('swap').addEventListener('click', function () {
