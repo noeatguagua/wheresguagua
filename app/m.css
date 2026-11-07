@@ -101,16 +101,24 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   max-height: 0; opacity: 0; visibility: hidden; transform: translateY(calc(-6 * var(--u)));
   transition: max-height .26s var(--ease), opacity .2s, transform .26s var(--ease), visibility 0s .26s;
 }
-.suggest.open { max-height: calc(250 * var(--u)); opacity: 1; visibility: visible; transform: none; overflow-y: auto; transition-delay: 0s; }
+.suggest.open { max-height: min(var(--mh, 9999px), calc(300 * var(--u))); opacity: 1; visibility: visible; transform: none; overflow-y: auto; transition-delay: 0s; }
 .suggest { top: calc(100% + 8 * var(--u)); }
 .suggest.up { top: auto; bottom: calc(100% + 8 * var(--u)); transform: translateY(calc(6 * var(--u))); }
 .suggest.up.open { transform: none; }
-.suggest li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(10 * var(--u)) calc(20 * var(--u)); min-height: calc(50 * var(--u)); cursor: pointer; }
-.suggest li + li { border-top: calc(1 * var(--u)) solid rgba(255, 255, 255, .25); }
-.suggest li[aria-selected="true"], .suggest li:active { background: rgba(255, 255, 255, .16); }
-.suggest .codes { font-size: calc(13 * var(--u)); font-weight: 500; opacity: .85; letter-spacing: .04em; text-align: right; }
-.suggest .none { cursor: default; font-weight: 500; font-size: calc(15 * var(--u)); justify-content: flex-start; }
-.suggest .lbl { font-size: calc(13 * var(--u)); font-weight: 500; opacity: .7; cursor: default; min-height: 0; padding-bottom: 0; justify-content: flex-start; }
+.suggest li { display: flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(9 * var(--u)) calc(18 * var(--u)); min-height: calc(46 * var(--u)); cursor: pointer; font-size: calc(19 * var(--u)); }
+.suggest li[role="option"] + li[role="option"] { border-top: calc(1 * var(--u)) solid rgba(255, 255, 255, .22); }
+.suggest li[aria-selected="true"], .suggest li[role="option"]:active { background: rgba(255, 255, 255, .18); }
+.suggest .code { width: 3.2em; font-size: calc(14 * var(--u)); font-weight: 600; letter-spacing: .05em; opacity: .8; }
+.suggest .nm { flex: 1; }
+.suggest .none { cursor: default; font-weight: 500; font-size: calc(15 * var(--u)); }
+/* 篩選鈕：全部＋各線（同 annotator）；選中者填白、藍字，與車廂格的選中狀態一致 */
+.suggest .chips { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: calc(5 * var(--u)); padding: calc(10 * var(--u)) calc(12 * var(--u)); min-height: 0; background: #000c86; border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, .3); cursor: default; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: calc(4 * var(--u)); height: calc(28 * var(--u)); padding: 0 calc(8 * var(--u)); border: var(--bw) solid #fff; border-radius: calc(14 * var(--u)); font-size: calc(12.5 * var(--u)); font-weight: 700; color: #fff; transition: background .2s, color .2s; }
+.chip i { width: calc(8 * var(--u)); height: calc(8 * var(--u)); border-radius: 50%; border: calc(1 * var(--u)) solid rgba(255, 255, 255, .85); }
+.chip.on { background: #fff; color: var(--navy); }
+/* 路線分組標題：該線顏色（同 annotator 的 .lh） */
+.suggest .lh { position: relative; min-height: 0; padding: calc(4 * var(--u)) calc(18 * var(--u)); font-size: calc(14 * var(--u)); font-weight: 700; cursor: default; text-shadow: 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 10, 90, .35); }
+.suggest .lh.recent { background: rgba(255, 255, 255, .16); }
 
 /* ---------- 站名底色（與捷運線同色；轉乘站為兩線過渡漸層） ---------- */
 .pill {

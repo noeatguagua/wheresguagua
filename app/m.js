@@ -64,16 +64,24 @@
     to: { input: $('i-to'), code: $('c-to'), field: $('f-to'), list: $('l-to'), items: [], active: -1 }
   };
 
-  function search(q) {
-    q = norm(q); if (!q) return [];
-    var out = [];
-    ST.forEach(function (s) {
-      var n = norm(s.name), cs = s.lines.map(function (l) { return l.code.toUpperCase(); });
-      var rank = n === q ? 0 : n.indexOf(q) === 0 ? 1 : cs.some(function (c) { return c.indexOf(q) === 0; }) ? 2 : n.indexOf(q) > 0 ? 3 : 9;
-      if (rank < 9) out.push({ name: s.name, rank: rank });
+  /* 下拉選單：與 annotator 的「路線分類展示」相同——上方篩選鈕（全部＋各線），下方依線分組，站碼由小到大；轉乘站在各線底下各出現一次 */
+  var LINES = ['文湖線', '淡水信義線', '松山新店線', '中和新蘆線', '板南線'];
+  var LINE_VAR = { '文湖線': 'var(--br)', '淡水信義線': 'var(--r)', '松山新店線': 'var(--g)', '中和新蘆線': 'var(--o)', '板南線': 'var(--bl)' };
+  var codeNum = function (c) { var m = String(c).match(/(\d+)([A-Z]?)/); return m ? +m[1] * 10 + (m[2] ? m[2].charCodeAt(0) - 64 : 0) : 0; };
+  var ROWS = [];
+  LINES.forEach(function (l) {
+    var rows = [];
+    ST.forEach(function (s) { s.lines.forEach(function (x) { if (x.line === l) rows.push({ n: s.name, l: l, code: x.code }); }); });
+    rows.sort(function (a, b) { return codeNum(a.code) - codeNum(b.code); });
+    ROWS = ROWS.concat(rows);
+  });
+  var listFilter = 'all';
+  function visibleRows(q) {
+    q = norm(q);
+    return ROWS.filter(function (r) {
+      if (listFilter !== 'all' && r.l !== listFilter) return false;
+      return !q || norm(r.n).indexOf(q) >= 0 || r.code.toUpperCase().indexOf(q) === 0;
     });
-    out.sort(function (a, b) { return a.rank - b.rank || a.name.localeCompare(b.name, 'zh-Hant'); });
-    return out.slice(0, 8).map(function (o) { return o.name; });
   }
 
   function setField(w, name) {
@@ -87,21 +95,34 @@
     f.input.style.marginRight = sp ? -sp + 'em' : '';
   }
 
-  function renderList(w, mode) {
+  function renderList(w) {
     var f = F[w], q = f.input.value, items = [], html = '';
-    if (mode === 'recent') {
-      items = load('gg.recent', []).filter(function (n) { return ST.has(n); }).slice(0, 5);
-      if (items.length) html += '<li class="lbl" role="presentation">最近查詢</li>';
-    } else items = search(q);
-    f.items = items; f.active = -1;
-    items.forEach(function (n, i) {
-      html += '<li role="option" id="' + f.list.id + '-' + i + '" data-i="' + i + '" aria-selected="false">' + pill(n, null, true) + '<span class="codes">' + esc(allCodes(n)) + '</span></li>';
+    html += '<li class="chips" role="presentation">' + ['all'].concat(LINES).map(function (l) {
+      return '<button type="button" class="chip' + (listFilter === l ? ' on' : '') + '" data-f="' + l + '" tabindex="-1">' +
+        (l === 'all' ? '全部' : '<i style="background:' + LINE_VAR[l] + '"></i>' + esc(l.replace('線', ''))) + '</button>';
+    }).join('') + '</li>';
+    if (!q.trim() && listFilter === 'all') {
+      var rec = load('gg.recent', []).filter(function (n) { return ST.has(n); }).slice(0, 4);
+      if (rec.length) {
+        html += '<li class="lh recent" role="presentation">最近查詢</li>';
+        rec.forEach(function (n) { items.push(n); html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"><span class="code">' + esc(codeOf(n)) + '</span><span class="nm">' + esc(n) + '</span></li>'; });
+      }
+    }
+    var last = '', rows = visibleRows(q);
+    rows.forEach(function (r) {
+      if (r.l !== last) { last = r.l; html += '<li class="lh" role="presentation" style="background:' + LINE_VAR[r.l] + '">' + esc(r.l) + '</li>'; }
+      items.push(r.n);
+      html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"><span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.n) + '</span></li>';
     });
-    if (!items.length && mode !== 'recent' && q.trim()) html = '<li class="none" role="presentation">找不到「' + esc(q.trim()) + '」</li>';
+    if (!rows.length) html += '<li class="none" role="presentation">' + (q.trim() ? '找不到「' + esc(q.trim()) + '」' : '沒有車站') + '</li>';
+    f.items = items; f.active = -1;
     f.list.innerHTML = html;
-    var open = !!html;
-    f.list.classList.toggle('open', open);
-    f.input.setAttribute('aria-expanded', open ? 'true' : 'false');
+    f.list.classList.add('open');
+    f.input.setAttribute('aria-expanded', 'true');
+    /* 不超出外框：往下開的取欄位下方剩餘高度，往上開的取欄位上方 */
+    var fr = document.querySelector('.frame').getBoundingClientRect(), fb = f.field.getBoundingClientRect();
+    var avail = f.list.classList.contains('up') ? fb.top - fr.top - 14 : fr.bottom - fb.bottom - 14;
+    f.list.style.setProperty('--mh', Math.max(120, Math.floor(avail)) + 'px');
   }
   function closeList(w) { var f = F[w]; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); }
   function move(w, d) {
@@ -118,8 +139,8 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w, f.input.value ? 'search' : 'recent'); setTimeout(function () { f.field.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 250); });
-    f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w, 'search'); });
+    f.input.addEventListener('focus', function () { f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 250); });
+    f.input.addEventListener('input', function () { state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
     f.input.addEventListener('blur', function () {
       setTimeout(function () {
         closeList(w);
@@ -138,8 +159,10 @@
       }
     });
     f.list.addEventListener('pointerdown', function (ev) {
+      var chip = ev.target.closest('[data-f]');
+      if (chip) { ev.preventDefault(); listFilter = chip.dataset.f; renderList(w); f.list.scrollTop = 0; return; }
       var li = ev.target.closest('[role=option]'); if (!li) return;
-      ev.preventDefault(); choose(w, f.items[+li.dataset.i]);
+      ev.preventDefault(); choose(w, f.items[+li.id.slice(f.list.id.length + 1)]);
     });
   });
 
