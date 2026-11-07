@@ -2,7 +2,7 @@
 Copyright 2026 Jeffrey Chang
 
 本專案的程式碼依 Apache License 2.0 授權（見 LICENSE）。
-車廂人工標記資料不隨本庫散布，保留所有權利（見 LICENSE-DATA.md）。
+車廂人工標記資料（app/data.private.js）隨網站公開顯示，但保留所有權利、未授予再利用權（見 LICENSE-DATA.md）。
 其餘資料來自第三方，授權與出處見 DATA_SOURCES.md。
 
 內含的第三方資源：

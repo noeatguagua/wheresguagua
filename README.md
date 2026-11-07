@@ -19,7 +19,7 @@ python -m http.server 8765 --directory app
 | `http://localhost:8765/m.html` | **手機版介面**（依 `gb.pdf` 設計稿，4 頁滿屏流程）。請用手機尺寸或瀏覽器的裝置模擬開啟 |
 | `http://localhost:8765/index.html` | 早期的桌面版原型（查詢表單＋完整結果） |
 
-公開庫**不含車廂標記資料**，所以直接開啟時路線可算，但不會給「建議搭第幾節車廂」（見[授權與資料來源](#授權與資料來源)）。
+庫內含車廂標記資料 `app/data.private.js`，開啟時會自動載入並給「建議搭第幾節車廂」；沒有這個檔案時路線仍可算，只是不給車廂建議（見[授權與資料來源](#授權與資料來源)）。
 
 手機版字體（Noto Serif TC）從 Google Fonts 載入，離線時退回系統宋體。
 
@@ -44,7 +44,7 @@ app/
   index.html              早期桌面版原型
   engine.js               路線引擎：純函式，無 DOM、無網路，瀏覽器與 Node 通用
   data.js                 預先建好的公開資料（車廂欄位為空；約 125 KB）
-  data.private.js         車廂標記資料（私有，不在庫內；有就自動載入）
+  data.private.js         車廂標記資料（有就自動載入；隨網站公開，見 LICENSE-DATA.md）
   assets/                 背景光暈、電梯／手扶梯圖示
 annotator/                本機標記工具（標記電梯／手扶梯在第幾車廂），僅綁 127.0.0.1:8766
 data/
@@ -140,7 +140,7 @@ npm test          # 等同 node - < tests/golden.test.js
 | 範圍 | 授權 |
 |---|---|
 | 程式碼（`app/`、`tools/`、`annotator/`、`tests/`） | [Apache License 2.0](LICENSE)，著作權聲明見 [NOTICE](NOTICE) |
-| 車廂人工標記資料（`data/annotations.json`、`data.private.js`） | **不公開，保留所有權利**，見 [LICENSE-DATA.md](LICENSE-DATA.md) |
+| 車廂人工標記資料（`data.private.js`；原始檔 `data/annotations.json` 不進版控） | **隨網站公開顯示，但保留所有權利、未授予再利用權**，見 [LICENSE-DATA.md](LICENSE-DATA.md) |
 | TDX、data.taipei 等第三方資料 | 依各來源條款，出處見 [DATA_SOURCES.md](DATA_SOURCES.md)；**本庫尚未逐一核對這些資料集的授權** |
 
 本專案與臺北捷運公司無隸屬關係，亦非官方應用程式。
@@ -149,4 +149,4 @@ npm test          # 等同 node - < tests/golden.test.js
 
 - 第三方資料（`data/tdx/`、`app/data.js`）的再散布條件：請到 [DATA_SOURCES.md](DATA_SOURCES.md) 列的來源頁面確認。
 - `.secret/` 已被忽略；金鑰只存在你的本機。
-- `data/annotations_backup/` 與車廂私有資料（`data/annotations.json`、`app/data.private.js`、`tests/fixtures/data.frozen.js`、`tests/golden/`）已加入 `.gitignore`。
+- `data/annotations_backup/`、`data/annotations.json`、`tests/fixtures/data.frozen.js`、`tests/golden/` 已加入 `.gitignore`；`app/data.private.js` 則刻意公開（網站需要它）。

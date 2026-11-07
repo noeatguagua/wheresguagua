@@ -1,6 +1,6 @@
 # 把 app/ 部署成 GitHub Pages 靜態網站（無建置步驟）。
 # 網站根網址 = 手機版介面；桌面版原型在 /desktop.html。
-# 注意：app/data.private.js（車廂標記）已被 .gitignore 排除，不會進到庫裡，因此也不會被部署。
+# app/data.private.js（車廂標記）隨庫公開，會一併部署；原始標記檔 data/annotations.json 不在 app/ 內，不會部署。
 name: Deploy to GitHub Pages
 
 on:
@@ -30,7 +30,6 @@ jobs:
         run: |
           mkdir _site
           cp -r app/. _site/
-          rm -f _site/data.private.js          # 保險：就算被誤放進來也不部署
           mv _site/index.html _site/desktop.html
           cp _site/m.html _site/index.html     # 根網址 = 手機版
           touch _site/.nojekyll

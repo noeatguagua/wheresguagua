@@ -7,8 +7,8 @@ node_modules/
 # 單月 OD 原始 CSV（約 300 MB）不進版控
 data/od_*.csv
 
-# 車廂標記資料（不公開；見 LICENSE-DATA.md）
+# 車廂標記原始資料與測試快照（不進版控；見 LICENSE-DATA.md）
+# 注意：app/data.private.js（由 annotations.json 轉出）自 2026-11-08 起隨網站公開部署，已進版控
 data/annotations.json
-app/data.private.js
 tests/fixtures/data.frozen.js
 tests/golden/
