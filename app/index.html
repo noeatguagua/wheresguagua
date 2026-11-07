@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>捷運無礙行</title>
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--ink:#1b2430;--muted:#5b6675;--line:#dfe3e8;--accent:#0b6bcb;--accent-ink:#fff;
+  --ok:#1a7f4b;--warn:#b25e00;--bad:#b3261e;--okbg:#e6f4ec;--warnbg:#fff1dd;--badbg:#fde8e6;--chip:#eef1f5;
+  --c1:#bcd88a;--c2:#f5d34d;--c3:#f0962e;--c4:#d9453b;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12161c;--card:#1b222b;--ink:#e8edf3;--muted:#9aa6b5;--line:#2c3643;--accent:#5aa6ff;--accent-ink:#06121f;
+  --ok:#5fd394;--warn:#f0b35a;--bad:#ff8f87;--okbg:#14301f;--warnbg:#38280f;--badbg:#3b1b19;--chip:#27303b;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 system-ui,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2rem 0}
+.sub{color:var(--muted);margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;align-items:end}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+button.primary{width:100%;min-height:52px;margin-top:16px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1.05rem;cursor:pointer}
+button.ghost{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 12px;cursor:pointer;min-height:40px}
+button.swap{min-height:48px;width:48px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font-size:1.2rem;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--chip);font-size:.85rem}
+.chip.ok{background:var(--okbg);color:var(--ok)} .chip.warn{background:var(--warnbg);color:var(--warn)} .chip.bad{background:var(--badbg);color:var(--bad)}
+.total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.total b{font-size:1.9rem}
+.step{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:12px 0;border-top:1px dashed var(--line)}
+.dot{width:14px;height:14px;border-radius:50%;margin:6px 0 0 6px;border:3px solid var(--accent)}
+.badge{display:inline-block;color:#fff;border-radius:6px;padding:0 8px;font-size:.85rem;font-weight:700;margin-right:6px}
+.small{font-size:.9rem;color:var(--muted)}
+.elev{background:var(--chip);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:.95rem;white-space:pre-line}
+.plan{background:var(--chip);border-radius:10px;padding:8px 10px;margin-top:8px}
+.plan p{margin:2px 0}
+.train{display:flex;gap:4px;margin:8px 0 2px}
+.car{flex:1;min-width:0;text-align:center;border-radius:6px;padding:4px 0;background:var(--card);border:2px solid var(--line);font-size:.85rem;min-height:46px}
+.car small{display:block;font-size:.7rem;font-weight:700;min-height:14px}
+.car.rec{border-color:var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:700}
+.car .up{color:var(--ok)} .car .dn{color:var(--accent)} .car.rec .up,.car.rec .dn{color:var(--accent-ink)}
+.bars{display:flex;align-items:flex-end;gap:2px;height:36px;margin-top:6px}
+.bars i{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.bars i.now{outline:2px solid var(--ink)}
+.tabs{display:flex;gap:8px;overflow-x:auto;margin-top:12px}
+.tabs button{white-space:nowrap}
+.tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+details summary{cursor:pointer;min-height:40px;display:flex;align-items:center}
+footer{color:var(--muted);font-size:.85rem;margin:20px 0 40px}
+.lv{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+  <h1>捷運無礙行</h1>
+  <p class="sub">行動不便者的臺北捷運路線：全程電梯、上下車的建議車廂、電梯狀態與人流。</p>
+
+  <section class="card" aria-labelledby="f">
+    <h2 id="f" style="font-size:1.1rem;margin:0">查詢</h2>
+    <div class="row3">
+      <div><label for="from">起站</label><input id="from" list="stl" autocomplete="off" placeholder="例如：板橋"></div>
+      <button class="swap" id="swap" aria-label="對調起訖站" title="對調起訖站">⇄</button>
+      <div><label for="to">訖站</label><input id="to" list="stl" autocomplete="off" placeholder="例如：中山國中"></div>
+    </div>
+    <datalist id="stl"></datalist>
+    <div class="row">
+      <div><label for="when">出發時間</label><input id="when" type="datetime-local"></div>
+      <div><label for="mode">行動方式</label>
+        <select id="mode">
+          <option value="wheel">輪椅（只走電梯）</option>
+          <option value="stroller">嬰兒車（只走電梯）</option>
+          <option value="walk">行動不便、可短距離步行（電梯或手扶梯）</option>
+        </select></div>
+    </div>
+    <button class="primary" id="go">規劃路線</button>
+    <div class="chips" aria-label="範例">
+      <button class="ghost" data-ex="板橋|中山國中">板橋 → 中山國中</button>
+      <button class="ghost" data-ex="淡水|象山">淡水 → 象山</button>
+      <button class="ghost" data-ex="動物園|台北車站">動物園 → 台北車站</button>
+      <button class="ghost" id="now">出發時間設為現在</button>
+    </div>
+  </section>
+
+  <div id="out" aria-live="polite"></div>
+
+  <footer id="foot"></footer>
+</main>
+<script src="data.js"></script>
+<script src="data.private.js" onerror="void 0"></script>
+<script src="engine.js"></script>
+<script>
+// 畫面只負責「輸入 → 呼叫引擎 → 把結構化結果畫出來」；所有計算都在 engine.js（輸出契約見 docs/API-spec-v0.md）
+const E = MetroEngine.createEngine(window.METRO_DATA), META = E.meta(), MODES = META.modes;
+const LINE_COLOR = {'文湖線':'#c48c31','淡水信義線':'#e3002c','松山新店線':'#008659','中和新蘆線':'#f8b61c','板南線':'#0070bd'};
+const LINE_DARK_TEXT = new Set(['中和新蘆線']);
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const esc = s => (s??'').toString().replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const hhmm = iso => iso.slice(11,16);
+const nowTaipei = () => new Date(Date.now()+8*3600e3).toISOString().slice(0,16); // 臺北時間，不受瀏覽器時區影響
+const STATIONS = E.stations();
+$('stl').innerHTML = STATIONS.map(s=>`<option value="${s.name}">`).join('');
+const setNow = () => { $('when').value = nowTaipei(); };
+setNow();
+
+const LVT=['','舒適','普通','偏擠','很擠'];
+const LVC=['','var(--c1)','var(--c2)','var(--c3)','var(--c4)'];
+const badge=l=>`<span class="badge" style="background:${LINE_COLOR[l]};${LINE_DARK_TEXT.has(l)?'color:#222':''}">${l}</span>`;
+const crowdLine=(c,label)=>c?`<div class="small"><span class="lv" style="background:${LVC[c.level]}"></span>${label}此時段歷史人流：<b>${LVT[c.level]}</b>（平均約 ${c.avgPerHour.toLocaleString()} 人次/小時）</div>`:'';
+function bars(station,hour,weekend){
+  const a=E.station(station).crowd?.[weekend?'weekend':'weekday']; if(!a) return '';
+  const mx=Math.max(...a.map(x=>x.avgPerHour),1);
+  return `<div class="bars" role="img" aria-label="${station}站 24 小時歷史人流">`+a.map(x=>
+    `<i class="${x.hour===hour?'now':''}" style="height:${Math.max(6,x.avgPerHour/mx*100)}%;background:${LVC[x.level]}" title="${x.hour}時"></i>`).join('')+'</div>'+
+    `<div class="small">0 時 ─ 23 時（粗框＝出發時段）</div>`;
+}
+function exitsHTML(s){
+  if(s.elevatorExits.length) return `<div class="small">有電梯的出口：${s.elevatorExits.map(x=>'出口'+x.id+(x.description?'（'+esc(x.description)+'）':'')).join('、')}</div>`;
+  return s.accessibleExits.length?`<div class="small">無障礙出入口：${s.accessibleExits.map(x=>'出口'+x).join('、')}</div>`:'';
+}
+function riskHTML(r){
+  let h='';
+  if(r.anomaly) h+=`<span class="chip bad">⚠ 目前公告異常：${esc(r.anomaly.text).slice(0,60)}</span> `;
+  if(r.maintenance.length){const locs=[...new Set(r.maintenance.map(m=>m.location))].join('、');h+=`<span class="chip warn">當日預排電梯檢修（${locs}）</span> `;}
+  return h;
+}
+function trainHTML(ride){
+  const N=ride.car.total, rec=ride.car.recommended, up=new Set(ride.board.targetCars), dn=new Set(ride.alight.targetCars);
+  return `<div class="train" role="img" aria-label="車廂示意，建議第 ${rec} 節，車頭在左">`+
+   Array.from({length:N},(_,i)=>{const c=i+1;
+     return `<div class="car ${c===rec?'rec':''}">${c}<small>${c===rec?'搭乘':''}</small><small>${up.has(c)?'<span class="up">上站電梯</span>':''}${up.has(c)&&dn.has(c)?' ':''}${dn.has(c)?'<span class="dn">下站電梯</span>':''}</small></div>`;}).join('')+
+   `</div><div class="small">← 車頭（行進方向）　車尾 →　　亮色＝你要搭的車廂（上、下車同一節，車廂內不移動）　「上站電梯」＝上車站電梯的位置，先走到亮色車廂候車；「下站電梯」＝下車站電梯的位置</div>`;
+}
+function describe(side,mode){
+  if(side.dataBasis==='none') return '（沒有標記資料）';
+  const part=(arr,name)=>arr.length?`${name}在`+arr.map(e=>`第 ${e.car} 節${e.label?'（'+esc(e.label)+'）':''}`).join('、'):'';
+  const txt=[part(side.elevators,'電梯'),mode==='walk'?part(side.escalators,'手扶梯'):''].filter(Boolean).join('；');
+  return txt||(side.elevatorNone?'這個方向的月台沒有電梯':'（沒有標記資料）');
+}
+function rideHTML(ride,mode){
+  const {board,alight,car}=ride; let plan='';
+  if(car.reason==='missing'){
+    plan=`<div class="plan"><p>尚無這段的車廂標記資料，請依現場指標與站務人員協助。</p><div class="small">${ride.from}站月台電梯：${esc(board.platformElevatorText||'無描述')}</div></div>`;
+  }else{
+    const lines=[];
+    if(car.recommended!==null){
+      lines.push(`<p><b>建議搭第 ${car.recommended} 節車廂（上、下車同一節）</b>${car.basis==='mirrored'?' <span class="chip warn" title="這筆是由另一個方向鏡射推算，尚未現場核對">鏡射推算</span>':''}</p>`);
+      const vt=mode==='walk'?'電梯或手扶梯':'電梯', hasB=board.targetCars.length>0;
+      lines.push(`<p>▲ ${ride.from}站上車：${describe(board,mode)}。${hasB?(board.walkCars?`到月台後往第 ${car.recommended} 節走（約 ${board.walkCars} 節，${board.walkMeters} 公尺）候車。`:`${vt}就在第 ${car.recommended} 節車廂附近，直接在這裡候車。`):`請到第 ${car.recommended} 節車廂門口候車。`}</p>`);
+      lines.push(`<p>▼ ${ride.to}站下車：${describe(alight,mode)}。${alight.terminalFlipped?'<span class="small">（終點站，已依到站方向換算）</span>':''}</p>`);
+    }else lines.push(`<p>${car.reason==='blocked'?'這段的月台沒有可用的電梯，請洽站務人員協助。':'沒有可用的電梯位置資料。'}</p>`);
+    plan=`<div class="plan">${lines.join('')}${car.recommended!==null?trainHTML(ride):''}</div>`;
+  }
+  return `<div class="step"><div><div class="dot" style="border-color:${LINE_COLOR[ride.line]}"></div></div><div>
+      <div>${badge(ride.line)}<b>${ride.from}</b> → <b>${ride.to}</b>　往${ride.towards}方向，${ride.stops} 站，約 ${Math.round(ride.rideMin)} 分</div>
+      <div class="small">約 ${hhmm(board.time)} 上車　${hhmm(alight.time)} 下車</div>
+      ${crowdLine(board.crowd,ride.from+'站')}${plan}</div></div>`;
+}
+function transferHTML(t,mode){
+  const m=MODES[mode], p=META.params;
+  return `<div class="step"><div><div class="dot" style="border-style:dashed"></div></div><div>
+    <b>${t.station}站　轉乘</b>：${badge(t.fromLine)}→${badge(t.toLine)}
+    <div class="small">官方轉乘時間約 ${t.officialMin} 分${t.onSite===false?'（需出站轉乘）':''}，依${m.label}乘以 ${m.factor}、再乘 ${p.transferDiscount}（官方時間已含部分月台步行），加電梯等候 ${m.elevatorWaitMin} 分，預估 ${Math.round(t.estimatedMin)} 分${t.crowdBonusPct>0?`（已計入該時段人流加成 +${t.crowdBonusPct}%）`:''}；候車另計</div>
+    ${riskHTML(t.risk)}${crowdLine(t.crowd,t.station+'站')}</div></div>`;
+}
+function warningText(w){
+  if(w.code==='NO_ELEVATOR_PLATFORM') return `${w.station}站（${w.line}）此方向月台沒有電梯`;
+  return w.code;
+}
+function renderRoute(route,res,idx){
+  const {mode,weekend}=res.query, steps=route.steps, enter=steps[0], exit=steps[steps.length-1];
+  let html=`<div class="step"><div><div class="dot"></div></div><div><b>${enter.station}站　進站</b>
+    ${riskHTML(enter.risk)}${exitsHTML(enter)}
+    <div class="elev">出口電梯：\n${esc(enter.exitElevatorText||'（官方資料無描述）')}</div></div></div>`;
+  for(const s of steps){ if(s.type==='ride') html+=rideHTML(s,mode); else if(s.type==='transfer') html+=transferHTML(s,mode); }
+  html+=`<div class="step"><div><div class="dot" style="background:var(--accent)"></div></div><div><b>${exit.station}站　出站</b>　<span class="small">預計 ${hhmm(route.arrive)} 抵達</span>
+    ${riskHTML(exit.risk)}${exitsHTML(exit)}
+    <div class="elev">出口電梯：\n${esc(exit.exitElevatorText||'（官方資料無描述）')}</div></div></div>`;
+  const wc=route.summary.platformWalkCars, hasWarn=route.flags.anomalyStations.length>0;
+  return `<article class="card"><div class="total"><b>約 ${Math.round(route.totalMin)} 分</b><span>${hhmm(route.depart)} 出發 → ${hhmm(route.arrive)} 抵達</span></div>
+    <div class="chips"><span class="chip">${route.transfers===0?'免轉乘':'轉乘 '+route.transfers+' 次'}</span>
+      ${wc?`<span class="chip">月台上共走約 ${wc} 節車廂（${route.summary.platformWalkMeters} 公尺）</span>`:`<span class="chip ok">月台上幾乎不用走</span>`}
+      <span class="chip ${hasWarn?'bad':'ok'}">${hasWarn?'路線上有公告異常的電梯':'目前無未修復的電梯異常公告'}</span>
+      ${route.flags.unverifiedCars?'<span class="chip warn">部分車廂為鏡射推算</span>':''}
+      ${route.warnings.map(w=>`<span class="chip bad">⚠ ${esc(warningText(w))}</span>`).join('')}</div>
+    <div class="small" style="margin-top:6px">路線 ${idx+1}：${route.lines.join(' → ')}</div>${html}
+    <details><summary>起站 24 小時歷史人流（${weekend?'假日':'平日'}）</summary>${bars(enter.station,+route.depart.slice(11,13),weekend)}</details></article>`;
+}
+
+const ERR_TEXT={
+  UNKNOWN_STATION:r=>`請從清單選擇正確的站名。${r.suggestions?.length?'<br>你是不是要找：'+r.suggestions.map(esc).join('、'):''}`,
+  SAME_STATION:()=>'起訖站相同。', NO_ROUTE:()=>'找不到路線。', BAD_TIME:()=>'出發時間格式不正確。', BAD_MODE:()=>'行動方式不正確。'
+};
+function plan(){
+  const from=$('from').value.trim(), to=$('to').value.trim(), mode=$('mode').value, out=$('out');
+  const res=E.plan({from,to,mode,depart:$('when').value||undefined,max:3});
+  if(res.error){const f=ERR_TEXT[res.error.code];out.innerHTML=`<div class="card"><b>${f?f(res.error):esc(res.error.message)}</b>${res.error.code==='UNKNOWN_STATION'?'<div class="small">例如：板橋、中山國中、台北車站（本資料使用「台」字）。</div>':''}</div>`;return;}
+  try{localStorage.setItem('mrt-last',JSON.stringify({from:res.query.from,to:res.query.to,mode}));}catch(e){}
+  const shown=res.routes;
+  out.innerHTML=`<div class="tabs" role="group" aria-label="路線選項">${shown.map((r,i)=>`<button class="ghost" data-i="${i}" aria-pressed="${i===0}">路線 ${i+1}：約 ${Math.round(r.totalMin)} 分${r.warnings.length?' ⚠':''}</button>`).join('')}</div><div id="rt"></div>
+   <div class="actions"><button class="ghost" id="share">複製這個查詢的連結</button></div>
+   <p class="small">站間時間與轉乘時間採用 TDX 官方資料；候車、月台步行、轉乘係數、電梯等候與人流加成為估計值；車廂位置為人工標記（來源：捷運Go、現場），標示「鏡射推算」者尚未核對；人流為 ${META.crowd.month} 的歷史平均，不是即時擁擠度。電梯臨時故障請以車站現場公告為準。</p>`;
+  const show=i=>{ $('rt').innerHTML=renderRoute(shown[i],res,i); out.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.i===i))); };
+  out.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>show(+b.dataset.i)); show(0);
+  $('share').onclick=async()=>{const u=new URL(location.href);u.search=new URLSearchParams({from:res.query.from,to:res.query.to,mode}).toString();
+    try{await navigator.clipboard.writeText(u.toString());$('share').textContent='已複製 ✓';}catch(e){prompt('複製這個連結：',u.toString());}};
+}
+$('go').onclick=plan;
+$('swap').onclick=()=>{const a=$('from').value;$('from').value=$('to').value;$('to').value=a;};
+$('now').onclick=setNow;
+document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{const [a,c]=b.dataset.ex.split('|');$('from').value=a;$('to').value=c;plan();});
+// 還原上次查詢，或讀取網址參數（?from=&to=&mode=）
+(function(){
+  let last={}; try{last=JSON.parse(localStorage.getItem('mrt-last')||'{}');}catch(e){}
+  const q=new URLSearchParams(location.search);
+  const from=q.get('from')||last.from, to=q.get('to')||last.to, mode=q.get('mode')||last.mode;
+  if(mode&&MODES[mode])$('mode').value=mode;
+  if(from&&E.resolveStation(from).name)$('from').value=E.resolveStation(from).name; if(to&&E.resolveStation(to).name)$('to').value=E.resolveStation(to).name;
+  if(q.get('from')&&q.get('to'))plan();
+})();
+$('foot').innerHTML=`資料來源：交通部 TDX（站間行駛時間、轉乘時間、出口電梯）、臺北捷運公司／臺北市政府資料大平台（電梯位置、電梯維修預排、無障礙設施異常公告、出入口座標、每日分時各站 OD 流量），授權：政府資料開放授權條款；電梯／手扶梯對應車廂為人工標記（${META.carData.directions} 個行車方向，其中 ${META.carData.mirroredUnverified} 筆為鏡射推算）。<br>範圍：臺北捷運高運量五線（不含環狀線、小碧潭支線）。資料建立時間：${META.dataBuilt.replace('T',' ')}（異常公告為建立當下的快照）。`;
+</script>
+</body>
+</html>
