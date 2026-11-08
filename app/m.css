@@ -218,3 +218,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .sheet-box h2 { margin: 0 0 calc(12 * var(--u)); font-size: calc(24 * var(--u)); }
 .sheet-box ol { margin: 0 0 calc(18 * var(--u)); padding-left: calc(24 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; line-height: 1.8; }
 .sheet-box .btn { width: 100%; height: calc(52 * var(--u)); font-size: calc(19 * var(--u)); }
+
+/* 第二頁（路線總覽）：標題縮小 20%；內文數字（車廂、出口）加粗並放大 2 倍 */
+#overview .title { font-size: calc(57 * 0.8 * var(--u)); line-height: calc(76 * 0.8 * var(--u)); }
+.node .note .n { font-weight: 900; font-size: calc(16.5 * 2 * var(--u)); line-height: 1; vertical-align: -0.08em; }

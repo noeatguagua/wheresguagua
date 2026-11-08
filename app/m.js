@@ -248,6 +248,8 @@
     var ids = (x.elevatorExits || []).map(function (e) { return e.id; }).filter(function (v, i, a) { return v !== '0' && a.indexOf(v) === i; });
     return ids.length ? ids.map(function (i) { return '出口' + i; }).join(' , ') : '';
   }
+  /* 內文中的數字（車廂、出口編號）加粗放大 */
+  function numB(t) { return esc(t).replace(/(\d+)/g, '<b class="n">$1</b>'); }
   function code(name, line) { return '<span class="cd">' + esc(codeOf(name, line)) + '</span>'; }
   function spaced(name) { return '<span' + (spacing(name) ? ' class="sp" style="letter-spacing:' + spacing(name) * 1.1 + 'em;margin-right:' + -spacing(name) * 1.1 + 'em"' : '') + '>' + esc(name) + '</span>'; }
 
@@ -277,7 +279,7 @@
       if (x.transfer) nodes += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, false, x.transfer.toLine) + '<span>轉乘</span></div></div>';
       nodes += '<div class="node link"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, false, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>往</span>' + (nextT ? pill(rd.to, rd.line, false, nextT.toLine) : pill(rd.to, rd.line)) + '</div>' +
         (t.sub ? '<p class="note sub first">' + esc(t.sub) + '</p>' : '') +
-        '<p class="note' + (t.sub ? ' after' : '') + '">' + esc(t.l1) + ' ' + esc(t.l2) + '</p>' +
+        '<p class="note' + (t.sub ? ' after' : '') + '">' + numB(t.l1) + ' ' + numB(t.l2) + '</p>' +
         (t.warn ? '<p class="note sub warn">' + esc(t.warn) + '</p>' : '') + '</div>';   /* 月台方向放主標上方 */
     });
     var ex = m.exit, lastLine = m.rides[m.rides.length - 1].ride.line;
