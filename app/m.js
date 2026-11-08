@@ -38,7 +38,8 @@
       foot: '時間、車廂為預估，電梯以車站現場公告為準',
       carsAria: function (n, on) { return '共 ' + n + ' 節車廂' + (on ? '，建議搭第 ' + on + ' 節' : ''); },
       liveBest: function (m) { return '最佳路線約 ' + m + ' 分鐘'; }, liveStep: function (k, n) { return '第 ' + k + ' 段，共 ' + n + ' 段'; },
-      routeAria: function (a, b) { return '從' + a + '到' + b; }
+      routeAria: function (a, b) { return '從' + a + '到' + b; },
+      eta: '到站時間', etaEst: '預估', lastTrain: '末班車已過', depAt: '發車', soon: '即將進站', minUnitEta: ' 分'
     },
     en: {
       title: "Where to, Guagua?", homeTitle: 'Where to,<br>Guagua?', homeSub: 'Enter your origin and destination for the best route',
@@ -64,7 +65,8 @@
       foot: 'Times and cars are estimates. Follow on-site notices for elevator status.',
       carsAria: function (n, on) { return n + ' cars' + (on ? ', suggested car ' + on : ''); },
       liveBest: function (m) { return 'Best route, about ' + m + ' minutes'; }, liveStep: function (k, n) { return 'Leg ' + k + ' of ' + n; },
-      routeAria: function (a, b) { return 'From ' + a + ' to ' + b; }
+      routeAria: function (a, b) { return 'From ' + a + ' to ' + b; },
+      eta: 'Arrival in', etaEst: 'est.', lastTrain: 'Last train has left', depAt: 'dep.', soon: 'Arriving now', minUnitEta: ' min'
     }
   };
   function t(k, a, b) { var s = STR[LANG][k]; if (s == null) s = STR.zh[k]; return typeof s === 'function' ? s(a, b) : s; }
@@ -117,6 +119,7 @@
   /* ---------- 畫面切換（一次一頁，每頁滿屏） ---------- */
   var screens = { home: $('home'), overview: $('overview'), step: $('step') };
   function show(name, push) {
+    if (name !== 'step') stopEta();
     Object.keys(screens).forEach(function (n) { var el = screens[n]; el.classList.remove('active', 'enter'); });
     var el = screens[name];
     el.classList.add('active'); void el.offsetWidth; el.classList.add('enter');
@@ -289,7 +292,7 @@
       setErr(t(M[res.error.code] || 'fail')); return;
     }
     setErr('');
-    state.result = res; state.route = res.routes[0]; state.mode = modeOf(); state.k = 0;
+    state.result = res; state.route = res.routes[0]; state.mode = modeOf(); state.k = 0; state.planAt = Date.now(); state.svcBase = svcBase(state.planAt);
     save('gg.v1', { from: state.from, to: state.to });
     var rc = load('gg.recent', []).filter(function (n) { return n !== state.from && n !== state.to; });
     save('gg.recent', [state.to, state.from].concat(rc).slice(0, 8));
@@ -376,9 +379,78 @@
   var ICON_EL = '<img src="assets/elevator.svg" alt="" aria-hidden="true">';   /* 取自 gb.pdf 的原圖示 */
   var ICON_ES = '<img class="es" src="assets/escalator.png" alt="" aria-hidden="true">';   /* 使用者提供的原圖 */
 
+  /* ---------- 到站時間（mm:ss）：現在時間對班表 ----------
+     班表＝TDX StationTimeTable（app/timetable.js，延遲載入；不含文湖線）。時刻只到「分」，秒數＝該分鐘 0 秒。
+     取「使用者到月台之後的第一班」發車時刻；到了就自動換下一班。沒有班表的線（文湖線）退回引擎的預估時間並標「預估」。
+     不含國定假日（以週一至五／六／日判斷）。 */
+  var TT = null, ttLoading = null, etaTimer = null, etaToken = 0;
+  function loadTT() {
+    if (window.TIMETABLE) { TT = window.TIMETABLE; return Promise.resolve(TT); }
+    if (!ttLoading) ttLoading = new Promise(function (res) {
+      var sc = document.createElement('script'); sc.src = 'timetable.js';
+      sc.onload = function () { TT = window.TIMETABLE || null; res(TT); }; sc.onerror = function () { res(null); };
+      document.head.appendChild(sc);
+    });
+    return ttLoading;
+  }
+  function svcBase(ms) {                                   // 臺北營運日起點（04:00 前算前一天）
+    var day = Math.floor((ms + 8 * 36e5) / 864e5) * 864e5 - 8 * 36e5;
+    return (ms - day) / 1000 < 4 * 3600 ? day - 864e5 : day;
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  /* 只顯示分鐘（無條件捨去，不會高估剩餘時間）；不到 1 分鐘顯示「即將進站」 */
+  function showMin(el, s) {
+    if (s < 60) { el.classList.add('small'); el.textContent = t('soon'); return; }
+    el.classList.remove('small'); el.innerHTML = '<span class="m">' + Math.floor(s / 60) + '</span><span class="u">' + esc(t('minUnitEta')) + '</span>';
+  }
+  function stopEta() { etaToken++; if (etaTimer) { clearInterval(etaTimer); etaTimer = null; } }
+  function nextDeparture(rd, readySec, dayKey) {
+    var code = codeOf(rd.from, rd.line), groups = TT && TT[code]; if (!groups) return null;
+    var towards = String(rd.towards || '').replace(/臺/g, '台'), dir = null;
+    groups.forEach(function (g) { if (dir == null && g.n === towards) dir = g.d; });
+    if (dir == null) {                                      // 終點站名對不上：用「下一站站碼」判斷行進方向
+      var nx = rd.stopNames && rd.stopNames[1], nc = nx ? codeNum(codeOf(nx, rd.line)) : 0, bc = codeNum(code);
+      groups.forEach(function (g) { var dc = 0; ST.forEach(function (s) { if (s.name === g.n) s.lines.forEach(function (l) { if (l.line === rd.line) dc = codeNum(l.code); }); }); if (dir == null && dc && ((dc > bc) === (nc > bc))) dir = g.d; });
+    }
+    if (dir == null) return null;
+    var set = {}; groups.forEach(function (g) { if (g.d === dir && g[dayKey]) g[dayKey].split(',').forEach(function (x) { set[x] = 1; }); });
+    var mins = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+    return mins.length ? mins : [];
+  }
+  function startEta(rd) {
+    stopEta();
+    var el = $('eta'); if (!el || !state.route) return;
+    var tag = $('eta-tag'), clock = $('eta-clock'), token = etaToken;
+    var base = state.svcBase, dayKey = (function (d) { return d === 0 ? 'su' : d === 6 ? 'sa' : 'wd'; })(new Date(base + 8 * 36e5).getUTCDay());
+    var arriveMs = Date.parse((rd.board && rd.board.arrive) || state.route.depart), departMs = Date.parse(state.route.depart);
+    var readySec = (state.planAt - base) / 1000 + (arriveMs - departMs) / 1000;      // 預計到月台的時刻（營運日秒）
+    function runEstimate() {                                                         // 無班表：引擎預估
+      tag.textContent = t('etaEst'); clock.textContent = '';
+      var target = state.planAt + (Date.parse(rd.board.time) - departMs);
+      function tick() { showMin(el, Math.max(0, Math.round((target - Date.now()) / 1000))); }
+      tick(); etaTimer = setInterval(tick, 1000);
+    }
+    loadTT().then(function () {
+      if (token !== etaToken) return;                                               // 已離開這一頁
+      var mins = nextDeparture(rd, readySec, dayKey);
+      if (!mins) { runEstimate(); return; }
+      tag.textContent = ''; var dep = null;
+      function pick(fromSec) { dep = null; for (var i = 0; i < mins.length; i++) if (mins[i] * 60 >= fromSec) { dep = mins[i] * 60; break; } }
+      pick(readySec);
+      function tick() {
+        var nowSec = (Date.now() - base) / 1000;
+        if (dep != null && dep < nowSec) pick(nowSec);                              // 這班已開走：改下一班
+        if (dep == null) { el.textContent = t('lastTrain'); el.classList.add('small'); clock.textContent = ''; return; }
+        showMin(el, Math.max(0, Math.round(dep - nowSec)));
+        var hm = Math.floor(dep / 60) % 1440; clock.textContent = pad2(Math.floor(hm / 60)) + ':' + pad2(hm % 60) + ' ' + t('depAt');
+      }
+      tick(); etaTimer = setInterval(tick, 1000);
+    });
+  }
+
   function renderStep() {
     var m = build(), k = state.k, x = m.rides[k], rd = x.ride, last = k === m.rides.length - 1, tx = carText(rd);
-    var ctx = '';
+    var ctx = '<div class="eta"><span class="eta-l">' + esc(t('eta')) + '<small id="eta-tag">&nbsp;</small></span><b class="eta-t" id="eta" aria-live="off">--</b><span class="eta-c" id="eta-clock"></span></div>';
     var nextT = m.rides[k + 1] && m.rides[k + 1].transfer;
     if (x.transfer) ctx += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, x.transfer.toLine) + '<span>' + esc(t('transfer')) + '</span></div></div>';
     ctx += '<div class="node' + (k === 0 ? ' drop' : '') + '"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>' + esc(t('to')) + '</span>' + (nextT ? pill(rd.to, rd.line, nextT.toLine) : pill(rd.to, rd.line)) + '</div></div>';
@@ -399,6 +471,7 @@
       if (last) { state.route = null; state.result = null; show('home'); try { history.pushState({ screen: 'home' }, '', '#home'); } catch (e) { /* 略 */ } return; }
       state.k = k + 1; renderStep(); show('step', true);
     });
+    startEta(rd);
     $('live').textContent = t('liveStep', k + 1, m.rides.length);
   }
 

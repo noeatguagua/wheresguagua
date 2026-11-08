@@ -12,3 +12,6 @@ data/od_*.csv
 data/annotations.json
 tests/fixtures/data.frozen.js
 tests/golden/
+
+# TDX 班表原始檔（體積大，由 tools/fetch_timetable.py 取得）
+data/tdx_raw/

@@ -248,3 +248,14 @@ body.en .field input, body.en .field input::placeholder { font-size: calc(18.5 *
 .hd .time { white-space: nowrap; }
 body.en .hd .title, body.en #overview .title { font-size: calc(40 * var(--u)); line-height: calc(48 * var(--u)); }
 body.en .hd .time .num { letter-spacing: 0; }
+
+/* 步驟頁：到站時間倒數（預估） */
+.eta { display: flex; align-items: baseline; gap: calc(10 * var(--u)); margin: 0 0 calc(16 * var(--u)) calc(2 * var(--u)); }
+.eta-l { font-size: calc(17 * var(--u)); font-weight: 700; }
+.eta-l small { margin-left: calc(5 * var(--u)); font-size: calc(11.5 * var(--u)); font-weight: 500; opacity: .85; }
+.eta-t { font-size: calc(40 * var(--u)); font-weight: 900; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1; }
+
+.eta-t.small { font-size: calc(20 * var(--u)); }
+.eta-c { font-size: calc(13 * var(--u)); font-weight: 600; opacity: .85; }
+
+.eta-t .u { margin-left: calc(3 * var(--u)); font-size: calc(21 * var(--u)); font-weight: 700; }
