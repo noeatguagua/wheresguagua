@@ -381,7 +381,7 @@
 
   /* ---------- 到站時間（mm:ss）：現在時間對班表 ----------
      班表＝TDX StationTimeTable（app/timetable.js，延遲載入；不含文湖線）。時刻只到「分」，秒數＝該分鐘 0 秒。
-     取「使用者到月台之後的第一班」發車時刻；到了就自動換下一班。沒有班表的線（文湖線）退回引擎的預估時間並標「預估」。
+     第 1 段取「現在時間之後的第一班」，到了發車時間才換下一班；之後各段把中間的搭乘與轉乘時間算進去再對班表（見 startEta）。沒有班表的線（文湖線）退回引擎的預估時間並標「預估」。
      不含國定假日（以週一至五／六／日判斷）。 */
   var TT = null, ttLoading = null, etaTimer = null, etaToken = 0;
   function loadTT() {
@@ -417,32 +417,36 @@
     var mins = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
     return mins.length ? mins : [];
   }
+  /* 第 k 段的發車時刻＝把前面各段「搭乘時間（rideMin）＋轉乘時間（transfer.estimatedMin）」都納入再對班表：
+     第 1 段：現在之後的第一班；第 k 段：上一段發車 ＋ 搭乘 ＋ 轉乘 → 預計到這站的時刻之後的第一班。
+     某段沒有班表（文湖線）就用引擎的候車預估代替，整個結果標「預估」。 */
   function startEta(rd) {
     stopEta();
     var el = $('eta'); if (!el || !state.route) return;
     var tag = $('eta-tag'), clock = $('eta-clock'), token = etaToken;
     var base = state.svcBase, dayKey = (function (d) { return d === 0 ? 'su' : d === 6 ? 'sa' : 'wd'; })(new Date(base + 8 * 36e5).getUTCDay());
-    var arriveMs = Date.parse((rd.board && rd.board.arrive) || state.route.depart), departMs = Date.parse(state.route.depart);
-    var readySec = (state.planAt - base) / 1000 + (arriveMs - departMs) / 1000;      // 預計到月台的時刻（營運日秒）
-    function runEstimate() {                                                         // 無班表：引擎預估
-      tag.textContent = t('etaEst'); clock.textContent = '';
-      var target = state.planAt + (Date.parse(rd.board.time) - departMs);
-      function tick() { showMin(el, Math.max(0, Math.round((target - Date.now()) / 1000))); }
-      tick(); etaTimer = setInterval(tick, 1000);
-    }
+    var rides = build().rides, k = state.k;
     loadTT().then(function () {
       if (token !== etaToken) return;                                               // 已離開這一頁
-      var mins = nextDeparture(rd, readySec, dayKey);
-      if (!mins) { runEstimate(); return; }
-      tag.textContent = ''; var dep = null;
-      function pick(fromSec) { dep = null; for (var i = 0; i < mins.length; i++) if (mins[i] * 60 >= fromSec) { dep = mins[i] * 60; break; } }
-      pick(readySec);
+      var legs = [];                                                                  // 各段班表（分鐘陣列）或 null
+      for (var i = 0; i <= k; i++) legs.push(nextDeparture(rides[i].ride, 0, dayKey));
+      function chain(nowSec) {
+        var dep = null, est = false, last = false;
+        for (var i = 0; i <= k; i++) {
+          var r = rides[i].ride, ready = i === 0 ? nowSec : dep + rides[i - 1].ride.rideMin * 60 + (rides[i].transfer ? rides[i].transfer.estimatedMin * 60 : 0);
+          var mins = legs[i], d = null;
+          if (mins && mins.length) { for (var j = 0; j < mins.length; j++) if (mins[j] * 60 >= ready) { d = mins[j] * 60; break; } if (d == null) return { last: true }; }
+          else { est = true; d = ready + ((r.board && r.board.waitMin) || 0) * 60; }
+          dep = d;
+        }
+        return { dep: dep, est: est };
+      }
       function tick() {
-        var nowSec = (Date.now() - base) / 1000;
-        if (dep != null && dep < nowSec) pick(nowSec);                              // 這班已開走：改下一班
-        if (dep == null) { el.textContent = t('lastTrain'); el.classList.add('small'); clock.textContent = ''; return; }
-        showMin(el, Math.max(0, Math.round(dep - nowSec)));
-        var hm = Math.floor(dep / 60) % 1440; clock.textContent = pad2(Math.floor(hm / 60)) + ':' + pad2(hm % 60) + ' ' + t('depAt');
+        var nowSec = (Date.now() - base) / 1000, c = chain(nowSec);
+        tag.textContent = c.est ? t('etaEst') : '';
+        if (c.last) { el.classList.add('small'); el.textContent = t('lastTrain'); clock.textContent = ''; return; }
+        showMin(el, Math.max(0, Math.round(c.dep - nowSec)));
+        if (c.est) clock.textContent = ''; else { var hm = Math.floor(c.dep / 60) % 1440; clock.textContent = pad2(Math.floor(hm / 60)) + ':' + pad2(hm % 60) + ' ' + t('depAt'); }
       }
       tick(); etaTimer = setInterval(tick, 1000);
     });
