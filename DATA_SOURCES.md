@@ -12,6 +12,8 @@
 - 檔案位置：[data/tdx/](data/tdx/)，抓取時間 2026-11-08（腳本 [tools/fetch_tdx.py](tools/fetch_tdx.py)）
 - 用於：站間行車時間、轉乘時間、有電梯的出口
 
+- 站名英文譯名：取自 TDX 各資料的 `StationName.En`（109 站），存於 [app/stations_en.js](app/stations_en.js)。
+
 ### data.taipei 臺北市資料大平臺
 
 - 平台：<https://data.taipei>

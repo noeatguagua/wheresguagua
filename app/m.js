@@ -1,4 +1,4 @@
-/* 瓜瓜去哪儿 — 手機版前端（依 gb.pdf）
+/* 瓜瓜去哪儿 — 手機版前端（依 gb.pdf）；中英文介面
  * 只負責「輸入 → 呼叫引擎 → 畫結構化結果」；所有路線計算在 engine.js。輸出契約見 docs/API-spec-v0.md。
  * 流程：首頁 —[路線生成]→ 總覽 —[確定行程]→ 逐段步驟（每段一頁）—[下一步]…[結束]→ 首頁。
  * 只有白色按鈕能前進到下一頁（鍵盤 Enter 只用來選站，不會送出）。 */
@@ -6,6 +6,74 @@
   'use strict';
   var E = MetroEngine.createEngine(window.METRO_DATA);
   var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- 儲存（只存偏好，失敗不影響使用） ---------- */
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 無痕或停用儲存 */ } }
+
+  /* ---------- 語言（中／英）：預設依瀏覽器語言，使用者切換後記住 ---------- */
+  var LANG = load('gg.lang', null) || (String(navigator.language || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en');
+  var STR = {
+    zh: {
+      title: '瓜瓜去哪儿', homeTitle: '瓜瓜<br>去哪<small>儿</small>', homeSub: '輸入起站迄站,給你最佳搭乘路線',
+      modes: '選擇需求設施', el: '電梯', es: '手扶梯', phFrom: '輸入起站', phTo: '輸入迄站', fromLabel: '起站', toLabel: '迄站',
+      go: '路線生成', swap: '對調起站與迄站', langBtn: 'EN', langAria: '切換成英文介面',
+      all: '全部', recent: '最近查詢', noMatch: function (q) { return '找不到「' + q + '」'; }, noStations: '沒有車站',
+      needFrom: '請輸入起站', needTo: '請輸入迄站',
+      badFrom: function (q) { return '找不到起站「' + q + '」，請從建議中選擇'; }, badTo: function (q) { return '找不到迄站「' + q + '」，請從建議中選擇'; },
+      same: '起站與迄站相同', noRoute: '找不到可行的路線', unknown: '找不到這個站名', fail: '無法產生路線，請稍後再試',
+      best: '最佳<br>路線', about: '約', minUnit: '分', to: '往', transfer: '轉乘', exit: '出站',
+      confirm: '確定行程', next: '下一步', done: '結束',
+      fac1: '電梯', fac2: '電梯／手扶梯',
+      noRec1: '此段沒有車廂建議,', noRec2: '請依站內指引搭乘',
+      board: function (n) { return '搭乘第 ' + n + ' 節車廂,'; },
+      unkExit: function (f) { return '下車站' + f + '位置請依站內指引'; },
+      nearExit: function (f) { return f + ' 將在下車處附近'; },
+      nearCar: function (f, l) { return f + ' 在第 ' + l + ' 節車廂附近'; },
+      mirrored: '※ 車廂位置為推算，尚未現場核對',
+      platform: function (x) { return '往 ' + x + ' 方向月台'; },
+      exitN: function (n) { return '出口' + n; }, sep: '、', joinExit: ' , ',
+      alertNote: '注意', alertNoElev: function (f, where) { return '此路線經過沒有' + f + '的月台' + (where ? '：' + where : '') + '，請先向站務人員確認。'; },
+      alertAnomaly: '電梯異常公告',
+      foot: '時間、車廂為預估，電梯以車站現場公告為準',
+      carsAria: function (n, on) { return '共 ' + n + ' 節車廂' + (on ? '，建議搭第 ' + on + ' 節' : ''); },
+      liveBest: function (m) { return '最佳路線約 ' + m + ' 分鐘'; }, liveStep: function (k, n) { return '第 ' + k + ' 段，共 ' + n + ' 段'; },
+      routeAria: function (a, b) { return '從' + a + '到' + b; }
+    },
+    en: {
+      title: "Where to, Guagua?", homeTitle: 'Where to,<br>Guagua?', homeSub: 'Enter your origin and destination for the best route',
+      modes: 'Facilities needed', el: 'Elevator', es: 'Escalator', phFrom: 'From station', phTo: 'To station', fromLabel: 'From station', toLabel: 'To station',
+      go: 'Find route', swap: 'Swap origin and destination', langBtn: '中', langAria: 'Switch to Chinese',
+      all: 'All', recent: 'Recent', noMatch: function (q) { return 'No match for "' + q + '"'; }, noStations: 'No stations',
+      needFrom: 'Enter an origin station', needTo: 'Enter a destination station',
+      badFrom: function (q) { return 'Origin "' + q + '" not found. Pick one from the list.'; }, badTo: function (q) { return 'Destination "' + q + '" not found. Pick one from the list.'; },
+      same: 'Origin and destination are the same', noRoute: 'No route found', unknown: 'Station not found', fail: 'Could not plan a route. Try again later.',
+      best: 'Best<br>Route', about: 'About', minUnit: ' min', to: 'to', transfer: 'Transfer', exit: 'Exit',
+      confirm: 'Confirm trip', next: 'Next', done: 'Done',
+      fac1: 'elevator', fac2: 'elevator/escalator',
+      noRec1: 'No car suggestion for this leg,', noRec2: 'follow the in-station signs',
+      board: function (n) { return 'Board car ' + n + ','; },
+      unkExit: function (f) { return 'check the in-station signs for the ' + f + ' at your exit station'; },
+      nearExit: function (f) { return 'the ' + f + ' is near where you get off'; },
+      nearCar: function (f, l) { return 'the ' + f + ' is near car ' + l; },
+      mirrored: '※ Car position is estimated, not yet verified on site',
+      platform: function (x) { return 'Platform toward ' + x; },
+      exitN: function (n) { return 'Exit ' + n; }, sep: ', ', joinExit: ', ',
+      alertNote: 'Note', alertNoElev: function (f, where) { return 'This route passes a platform with no ' + f + (where ? ' (' + where + ')' : '') + '. Please check with station staff first.'; },
+      alertAnomaly: 'Elevator outage notice',
+      foot: 'Times and cars are estimates. Follow on-site notices for elevator status.',
+      carsAria: function (n, on) { return n + ' cars' + (on ? ', suggested car ' + on : ''); },
+      liveBest: function (m) { return 'Best route, about ' + m + ' minutes'; }, liveStep: function (k, n) { return 'Leg ' + k + ' of ' + n; },
+      routeAria: function (a, b) { return 'From ' + a + ' to ' + b; }
+    }
+  };
+  function t(k, a, b) { var s = STR[LANG][k]; if (s == null) s = STR.zh[k]; return typeof s === 'function' ? s(a, b) : s; }
+  var EN = window.STATION_EN || {};                                   // 站名英文譯名（TDX）
+  var LINE_EN = { '文湖線': 'Wenhu Line', '淡水信義線': 'Tamsui–Xinyi Line', '松山新店線': 'Songshan–Xindian Line', '中和新蘆線': 'Zhonghe–Xinlu Line', '板南線': 'Bannan Line' };
+  function sname(name) { return LANG === 'en' ? (EN[name] || name) : name; }      // 主要顯示的站名
+  function ssub(name) { return LANG === 'en' ? name : (EN[name] || ''); }          // 底下／右邊的譯名
+  function lname(l) { return LANG === 'en' ? (LINE_EN[l] || l) : l; }
+  function lshort(l) { return LANG === 'en' ? (LINE_EN[l] || l).replace(' Line', '') : l.replace('線', ''); }
 
   /* ---------- 線色（站名底色；轉乘站為兩線漸層） ---------- */
   var LINE_COLOR = { '板南線': 'var(--bl)', '文湖線': 'var(--br)', '淡水信義線': 'var(--r)', '松山新店線': 'var(--g)', '中和新蘆線': 'var(--o)' };
@@ -16,8 +84,16 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function norm(s) { return String(s || '').replace(/臺/g, '台').replace(/\s+/g, '').replace(/站$/, '').toUpperCase(); }
   function codeOf(name, line) { var s = ST.get(name); if (!s || !s.lines[0]) return ''; var l = line && s.lines.filter(function (x) { return x.line === line; })[0]; return (l || s.lines[0]).code; }
-  function allCodes(name) { var s = ST.get(name); return s ? s.lines.map(function (l) { return l.code; }).join(' · ') : ''; }
-  function spacing(name) { var n = Array.from(name || '').length; return n <= 3 ? .5 : n === 4 ? .25 : 0; }
+  function spacing(name) { if (LANG === 'en') return 0; var n = Array.from(name || '').length; return n <= 3 ? .5 : n === 4 ? .25 : 0; }
+
+  /* 站名輸入解析：中文（含臺／台、有無「站」）或英文站名（不分大小寫）皆可 */
+  var EN_INDEX = {};
+  Object.keys(EN).forEach(function (zh) { EN_INDEX[norm(EN[zh]).replace(/STATION$/, '')] = zh; });
+  function resolveAny(text) {
+    var r = E.resolveStation(text); if (r && r.name) return r;
+    var n = norm(text).replace(/STATION$/, ''); if (n && EN_INDEX[n]) return { name: EN_INDEX[n] };
+    return { name: null };
+  }
 
   /* 站名底色：單一路線＝該線色；轉乘站＝兩線過渡漸層，firstLine 為左側（先到的那條線） */
   function bgOf(name, firstLine) {
@@ -28,15 +104,13 @@
     if (cs.length < 2) return cs[0] || '#777';
     return 'linear-gradient(90deg,' + cs.join(',') + ')';
   }
-  /* 底色規則：有 toLine（此站要換車）→ firstLine→toLine 漸層；只有 firstLine（不換車）→ 搭乘線單色；都沒有（站名建議）→ 該站所有線 */
-  function pill(name, firstLine, sm, toLine) {
+  /* 底色規則：有 toLine（此站要換車）→ firstLine→toLine 漸層；只有 firstLine（不換車）→ 搭乘線單色。
+     方塊內：站名在上、譯名在下（中文介面＝英文譯名；英文介面＝中文站名）。 */
+  function pill(name, firstLine, toLine) {
     var bg = toLine ? 'linear-gradient(90deg,' + LINE_COLOR[firstLine] + ',' + LINE_COLOR[toLine] + ')' : firstLine ? LINE_COLOR[firstLine] || '#777' : bgOf(name, null);
-    return '<span class="pill' + (sm ? ' sm' : '') + '" style="background:' + bg + '">' + esc(name) + '</span>';
+    var sub = ssub(name);
+    return '<span class="pill' + (LANG === 'en' ? ' en' : '') + '" style="background:' + bg + '"><span class="pn">' + esc(sname(name)) + '</span>' + (sub ? '<span class="ps">' + esc(sub) + '</span>' : '') + '</span>';
   }
-
-  /* ---------- 儲存（只存偏好，失敗不影響使用） ---------- */
-  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 無痕或停用儲存 */ } }
 
   var state = { from: null, to: null, route: null, result: null, mode: 'wheel', k: 0 };
 
@@ -58,7 +132,7 @@
     show(s.screen);
   });
 
-  /* ---------- 首頁：欄位與站名建議 ---------- */
+  /* ---------- 首頁：欄位與站名選單 ---------- */
   var COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   var F = {
     from: { input: $('i-from'), code: $('c-from'), field: $('f-from'), list: $('l-from'), items: [], active: -1 },
@@ -81,42 +155,47 @@
     q = norm(q);
     return ROWS.filter(function (r) {
       if (listFilter !== 'all' && r.l !== listFilter) return false;
-      return !q || norm(r.n).indexOf(q) >= 0 || r.code.toUpperCase().indexOf(q) === 0;
+      return !q || norm(r.n).indexOf(q) >= 0 || norm(EN[r.n] || '').indexOf(q) >= 0 || r.code.toUpperCase().indexOf(q) === 0;
     });
   }
 
   function setField(w, name) {
     var f = F[w];
     state[w] = name || null;
-    f.input.value = name || '';
+    f.input.value = name ? sname(name) : '';
     f.code.textContent = name ? codeOf(name) : '';
     f.field.classList.toggle('resolved', !!name);
-    var sp = name ? spacing(name) : 0;
+    var sp = name ? spacing(sname(name)) : 0;
     f.input.style.letterSpacing = sp ? sp + 'em' : '';
     f.input.style.marginRight = sp ? -sp + 'em' : '';
   }
 
+  /* 選單列：站碼＋主名稱＋譯名（中文介面：英文在右；英文介面：中文在右） */
+  function optRow(f, idx, n, code, cur) {
+    var sub = ssub(n);
+    return '<li role="option" id="' + f.list.id + '-' + idx + '" aria-selected="false"' + (cur ? ' class="cur" aria-current="true"' : '') + '><span class="code">' + esc(code) + '</span><span class="nm">' + esc(sname(n)) + '</span>' + (sub ? '<span class="tr">' + esc(sub) + '</span>' : '') + '</li>';
+  }
   function renderList(w) {
     /* 已選好站、還沒改字時，不拿站名當關鍵字（否則只剩那一站，無法換選）；使用者開始輸入才篩選 */
     var f = F[w], q = f.dirty ? f.input.value : '', items = [], html = '';
     html += '<li class="chips" role="presentation">' + ['all'].concat(LINES).map(function (l) {
       return '<button type="button" class="chip' + (listFilter === l ? ' on' : '') + '" data-f="' + l + '" tabindex="-1">' +
-        (l === 'all' ? '全部' : '<i style="background:' + LINE_VAR[l] + '"></i>' + esc(l.replace('線', ''))) + '</button>';
+        (l === 'all' ? esc(t('all')) : '<i style="background:' + LINE_VAR[l] + '"></i>' + esc(lshort(l))) + '</button>';
     }).join('') + '</li>';
     if (!q.trim() && listFilter === 'all') {
       var rec = load('gg.recent', []).filter(function (n) { return ST.has(n); }).slice(0, 4);
       if (rec.length) {
-        html += '<li class="lh recent" role="presentation">最近查詢</li>';
-        rec.forEach(function (n) { items.push(n); html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"><span class="code">' + esc(codeOf(n)) + '</span><span class="nm">' + esc(n) + '</span></li>'; });
+        html += '<li class="lh recent" role="presentation">' + esc(t('recent')) + '</li>';
+        rec.forEach(function (n) { items.push(n); html += optRow(f, items.length - 1, n, codeOf(n), false); });
       }
     }
     var last = '', rows = visibleRows(q);
     rows.forEach(function (r) {
-      if (r.l !== last) { last = r.l; html += '<li class="lh" role="presentation" style="background:' + LINE_VAR[r.l] + '">' + esc(r.l) + '</li>'; }
+      if (r.l !== last) { last = r.l; html += '<li class="lh" role="presentation" style="background:' + LINE_VAR[r.l] + '">' + esc(lname(r.l)) + '</li>'; }
       items.push(r.n);
-      html += '<li role="option" id="' + f.list.id + '-' + (items.length - 1) + '" aria-selected="false"' + (state[w] === r.n ? ' class="cur" aria-current="true"' : '') + '><span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.n) + '</span></li>';
+      html += optRow(f, items.length - 1, r.n, r.code, state[w] === r.n);
     });
-    if (!rows.length) html += '<li class="none" role="presentation">' + (q.trim() ? '找不到「' + esc(q.trim()) + '」' : '沒有車站') + '</li>';
+    if (!rows.length) html += '<li class="none" role="presentation">' + esc(q.trim() ? t('noMatch', q.trim()) : t('noStations')) + '</li>';
     f.items = items; f.active = -1;
     f.list.innerHTML = html;
     f.list.classList.add('open');
@@ -146,6 +225,7 @@
     setField(w, name); closeList(w); setErr('');
     if (w === 'from' && !state.to) F.to.input.focus(); else F[w].input.blur();
   }
+  var errKey = null;
   function setErr(msg) { $('err').textContent = msg || ''; }
 
   ['from', 'to'].forEach(function (w) {
@@ -156,8 +236,8 @@
        只在「選了站」「點選單與欄位以外」「Esc」時才收起（見 choose、document pointerdown、keydown）。 */
     f.input.addEventListener('blur', function () {
       setTimeout(function () {
-        var r = E.resolveStation(f.input.value);
-        if (r && r.name && !f.list.classList.contains('open')) setField(w, r.name);
+        var r = resolveAny(f.input.value);
+        if (r.name && !f.list.classList.contains('open')) setField(w, r.name);
       }, 120);
     });
     f.field.addEventListener('click', function () { if (!f.list.classList.contains('open')) { f.dirty = false; renderList(w); } });
@@ -183,7 +263,7 @@
 
   document.addEventListener('pointerdown', function (ev) {
     if (ev.target.closest('.stack')) return;
-    ['from', 'to'].forEach(function (w) { if (F[w].list.classList.contains('open')) { closeList(w); var r = E.resolveStation(F[w].input.value); if (r && r.name) setField(w, r.name); } });
+    ['from', 'to'].forEach(function (w) { if (F[w].list.classList.contains('open')) { closeList(w); var r = resolveAny(F[w].input.value); if (r.name) setField(w, r.name); } });
   });
 
   $('swap').addEventListener('click', function () {
@@ -199,14 +279,14 @@
 
   $('form').addEventListener('submit', function (ev) {
     ev.preventDefault();
-    ['from', 'to'].forEach(function (w) { if (!state[w]) { var r = E.resolveStation(F[w].input.value); if (r && r.name) setField(w, r.name); } });
-    if (!state.from) { setErr(F.from.input.value.trim() ? '找不到起站「' + F.from.input.value.trim() + '」，請從建議中選擇' : '請輸入起站'); F.from.input.focus(); return; }
-    if (!state.to) { setErr(F.to.input.value.trim() ? '找不到迄站「' + F.to.input.value.trim() + '」，請從建議中選擇' : '請輸入迄站'); F.to.input.focus(); return; }
+    ['from', 'to'].forEach(function (w) { if (!state[w]) { var r = resolveAny(F[w].input.value); if (r.name) setField(w, r.name); } });
+    if (!state.from) { var q1 = F.from.input.value.trim(); setErr(q1 ? t('badFrom', q1) : t('needFrom')); F.from.input.focus(); return; }
+    if (!state.to) { var q2 = F.to.input.value.trim(); setErr(q2 ? t('badTo', q2) : t('needTo')); F.to.input.focus(); return; }
     var res;
     try { res = E.plan({ from: state.from, to: state.to, mode: modeOf(), max: 1 }); } catch (e) { res = { error: { code: 'INTERNAL' } }; }
     if (res.error) {
-      var M = { SAME_STATION: '起站與迄站相同', NO_ROUTE: '找不到可行的路線', UNKNOWN_STATION: '找不到這個站名' };
-      setErr(M[res.error.code] || '無法產生路線，請稍後再試'); return;
+      var M = { SAME_STATION: 'same', NO_ROUTE: 'noRoute', UNKNOWN_STATION: 'unknown' };
+      setErr(t(M[res.error.code] || 'fail')); return;
     }
     setErr('');
     state.result = res; state.route = res.routes[0]; state.mode = modeOf(); state.k = 0;
@@ -226,38 +306,38 @@
     });
     return { rides: rides, exit: exit };
   }
-  function facility() { return state.mode === 'walk' ? '電梯／手扶梯' : '電梯'; }
+  function facility() { return t(state.mode === 'walk' ? 'fac2' : 'fac1'); }
 
   /* 車廂文字：design 句型「搭乘第 N 節車廂, 電梯 將在下車處附近」；資料不足時改為誠實的說法 */
   function carText(r) {
     var car = r.car, al = r.alight, out = { l1: '', l2: '', sub: '', warn: '' };
     if (car.recommended == null) {
-      out.l1 = '此段沒有車廂建議,'; out.l2 = '請依站內指引搭乘';
+      out.l1 = t('noRec1'); out.l2 = t('noRec2');
     } else {
-      out.l1 = '搭乘第 ' + car.recommended + ' 節車廂,';
+      out.l1 = t('board', car.recommended);
       var okAl = al && al.dataBasis === 'annotated' && al.targetCars && al.targetCars.length;
-      if (!okAl) out.l2 = '下車站' + facility() + '位置請依站內指引';
-      else if (al.targetCars.indexOf(car.recommended) >= 0) out.l2 = facility() + ' 將在下車處附近';
-      else out.l2 = facility() + ' 在第 ' + al.targetCars.join('、') + ' 節車廂附近';
-      if (car.basis === 'mirrored') out.warn = '※ 車廂位置為推算，尚未現場核對';
+      if (!okAl) out.l2 = t('unkExit', facility());
+      else if (al.targetCars.indexOf(car.recommended) >= 0) out.l2 = t('nearExit', facility());
+      else out.l2 = t('nearCar', facility(), al.targetCars.join(t('sep')));
+      if (car.basis === 'mirrored') out.warn = t('mirrored');
     }
-    if (r.towards) out.sub = '往 ' + r.towards + ' 方向月台';
+    if (r.towards) out.sub = t('platform', sname(r.towards));
     return out;
   }
   function exitsText(x) {
     var ids = (x.elevatorExits || []).map(function (e) { return e.id; }).filter(function (v, i, a) { return v !== '0' && a.indexOf(v) === i; });
-    return ids.length ? ids.map(function (i) { return '出口' + i; }).join(' , ') : '';
+    return ids.length ? ids.map(function (i) { return t('exitN', i); }).join(t('joinExit')) : '';
   }
   /* 內文中的數字（車廂、出口編號）加粗放大 */
-  function numB(t) { return esc(t).replace(/(\d+)/g, '<b class="n">$1</b>'); }
+  function numB(s) { return esc(s).replace(/(\d+)/g, '<b class="n">$1</b>'); }
   function code(name, line) { return '<span class="cd">' + esc(codeOf(name, line)) + '</span>'; }
-  function spaced(name) { return '<span' + (spacing(name) ? ' class="sp" style="letter-spacing:' + spacing(name) * 1.1 + 'em;margin-right:' + -spacing(name) * 1.1 + 'em"' : '') + '>' + esc(name) + '</span>'; }
+  function spaced(name) { var m = sname(name), sp = spacing(m); return '<span' + (sp ? ' class="sp" style="letter-spacing:' + sp * 1.1 + 'em;margin-right:' + -sp * 1.1 + 'em"' : '') + '>' + esc(m) + '</span>'; }
 
   function hdr(id) {
     var r = state.route, a = state.route.steps[0], z = state.route.steps[state.route.steps.length - 1];
-    return '<div class="hd"><div class="row"><h1 class="title" id="' + id + '">最佳<br>路線</h1>' +
-      '<div class="title time">約<br><span class="num">' + Math.round(r.totalMin) + '</span>分</div></div>' +
-      '<div class="route-line" aria-label="從' + esc(a.station) + '到' + esc(z.station) + '">' + code(a.station, a.line) + spaced(a.station) +
+    return '<div class="hd"><div class="row"><h1 class="title" id="' + id + '">' + t('best') + '</h1>' +
+      '<div class="title time">' + esc(t('about')) + '<br><span class="num">' + Math.round(r.totalMin) + '</span>' + esc(t('minUnit')) + '</div></div>' +
+      '<div class="route-line" aria-label="' + esc(t('routeAria', sname(a.station), sname(z.station))) + '">' + code(a.station, a.line) + spaced(a.station) +
       '<svg viewBox="0 0 14 16" aria-hidden="true"><path d="M0 0l14 8L0 16z" fill="#fff"/></svg>' + code(z.station, z.line) + spaced(z.station) + '</div></div>';
   }
 
@@ -266,30 +346,30 @@
     var m = build(), r = state.route, html = hdr('ov-h'), alerts = '';
     var nowarn = (r.warnings || []).filter(function (w) { return w.code === 'NO_ELEVATOR_PLATFORM'; });
     if (state.result.searchMode === 'relaxed' || nowarn.length) {
-      var where = nowarn.map(function (w) { return w.station + (w.line ? '（' + w.line + '）' : ''); }).join('、');
-      alerts += '<div class="alert"><b>注意</b>　此路線經過沒有' + facility() + '的月台' + (where ? '：' + esc(where) : '') + '，請先向站務人員確認。</div>';
+      var where = nowarn.map(function (w) { return sname(w.station) + (w.line ? (LANG === 'en' ? ' ' : '（') + lname(w.line) + (LANG === 'en' ? '' : '）') : ''); }).join(t('sep'));
+      alerts += '<div class="alert"><b>' + esc(t('alertNote')) + '</b>　' + esc(t('alertNoElev', facility(), where)) + '</div>';
     }
     var an = (r.flags && r.flags.anomalyStations) || [];
-    if (an.length) alerts += '<div class="alert"><b>電梯異常公告</b>　' + esc(an.join('、')) + '</div>';
+    if (an.length) alerts += '<div class="alert"><b>' + esc(t('alertAnomaly')) + '</b>　' + esc(an.map(sname).join(t('sep'))) + '</div>';
 
     var nodes = '';
     m.rides.forEach(function (x, i) {
-      var rd = x.ride, prevLine = x.transfer ? x.transfer.fromLine : null, nextT = m.rides[i + 1] && m.rides[i + 1].transfer;
-      var t = carText(rd);
-      if (x.transfer) nodes += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, false, x.transfer.toLine) + '<span>轉乘</span></div></div>';
-      nodes += '<div class="node link"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, false, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>往</span>' + (nextT ? pill(rd.to, rd.line, false, nextT.toLine) : pill(rd.to, rd.line)) + '</div>' +
-        (t.sub ? '<p class="note sub first">' + esc(t.sub) + '</p>' : '') +
-        '<p class="note' + (t.sub ? ' after' : '') + '">' + numB(t.l1) + ' ' + numB(t.l2) + '</p>' +
-        (t.warn ? '<p class="note sub warn">' + esc(t.warn) + '</p>' : '') + '</div>';   /* 月台方向放主標上方 */
+      var rd = x.ride, nextT = m.rides[i + 1] && m.rides[i + 1].transfer;
+      var tx = carText(rd);
+      if (x.transfer) nodes += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, x.transfer.toLine) + '<span>' + esc(t('transfer')) + '</span></div></div>';
+      nodes += '<div class="node link"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>' + esc(t('to')) + '</span>' + (nextT ? pill(rd.to, rd.line, nextT.toLine) : pill(rd.to, rd.line)) + '</div>' +
+        (tx.sub ? '<p class="note sub first">' + esc(tx.sub) + '</p>' : '') +
+        '<p class="note' + (tx.sub ? ' after' : '') + '">' + numB(tx.l1) + ' ' + numB(tx.l2) + '</p>' +
+        (tx.warn ? '<p class="note sub warn">' + esc(tx.warn) + '</p>' : '') + '</div>';   /* 月台方向放主標上方 */
     });
     var ex = m.exit, lastLine = m.rides[m.rides.length - 1].ride.line;
-    nodes += '<div class="node"><div class="line1">' + pill(ex.station, lastLine) + '<span>出站</span></div></div>';   /* 出口編號只在最後一頁顯示（依設計稿） */
+    nodes += '<div class="node"><div class="line1">' + pill(ex.station, lastLine) + '<span>' + esc(t('exit')) + '</span></div></div>';   /* 出口編號只在最後一頁顯示（依設計稿） */
     html = '<div class="scroll" style="display:flex;flex-direction:column">' + html + alerts + '<div class="tl">' + nodes + '</div>' +
-      '<p class="foot-note">時間、車廂為預估，電梯以車站現場公告為準</p></div>' +
-      '<div class="actions"><button class="btn" type="button" id="ov-go">確定行程</button></div>';
+      '<p class="foot-note">' + esc(t('foot')) + '</p></div>' +
+      '<div class="actions"><button class="btn" type="button" id="ov-go">' + esc(t('confirm')) + '</button></div>';
     screens.overview.innerHTML = html;
     $('ov-go').addEventListener('click', function () { state.k = 0; renderStep(); show('step', true); });
-    $('live').textContent = '最佳路線約 ' + Math.round(r.totalMin) + ' 分鐘';
+    $('live').textContent = t('liveBest', Math.round(r.totalMin));
   }
 
   /* ---------- 3、4. 逐段步驟 ---------- */
@@ -297,30 +377,51 @@
   var ICON_ES = '<img class="es" src="assets/escalator.png" alt="" aria-hidden="true">';   /* 使用者提供的原圖 */
 
   function renderStep() {
-    var m = build(), k = state.k, x = m.rides[k], rd = x.ride, last = k === m.rides.length - 1, t = carText(rd);
+    var m = build(), k = state.k, x = m.rides[k], rd = x.ride, last = k === m.rides.length - 1, tx = carText(rd);
     var ctx = '';
     var nextT = m.rides[k + 1] && m.rides[k + 1].transfer;
-    if (x.transfer) ctx += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, false, x.transfer.toLine) + '<span>轉乘</span></div></div>';
-    ctx += '<div class="node' + (k === 0 ? ' drop' : '') + '"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, false, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>往</span>' + (nextT ? pill(rd.to, rd.line, false, nextT.toLine) : pill(rd.to, rd.line)) + '</div></div>';
+    if (x.transfer) ctx += '<div class="node link"><div class="line1">' + pill(x.transfer.station, x.transfer.fromLine, x.transfer.toLine) + '<span>' + esc(t('transfer')) + '</span></div></div>';
+    ctx += '<div class="node' + (k === 0 ? ' drop' : '') + '"><div class="line1">' + (x.transfer ? pill(rd.from, x.transfer.fromLine, x.transfer.toLine) : pill(rd.from, rd.line)) + '<span>' + esc(t('to')) + '</span>' + (nextT ? pill(rd.to, rd.line, nextT.toLine) : pill(rd.to, rd.line)) + '</div></div>';
     var n = rd.car.total || 6, on = rd.car.recommended, cars = '';
     for (var i = 1; i <= n; i++) cars += '<div class="car' + (i === on ? ' on pop' : '') + '">' + (i === on ? i : '') + '</div>';
     var tail = '';
     if (last) {
       var ex = m.exit;
-      tail += '<div class="exit"><div class="line1">' + pill(ex.station, rd.line) + '<span>出站</span></div>' + (exitsText(ex) ? '<p class="exits">' + esc(exitsText(ex)) + '</p>' : '') + '</div>';
+      tail += '<div class="exit"><div class="line1">' + pill(ex.station, rd.line) + '<span>' + esc(t('exit')) + '</span></div>' + (exitsText(ex) ? '<p class="exits">' + esc(exitsText(ex)) + '</p>' : '') + '</div>';
     }
-    tail += '<button class="btn" type="button" id="st-go">' + (last ? '結束' : '下一步') + '</button>';
+    tail += '<button class="btn" type="button" id="st-go">' + esc(t(last ? 'done' : 'next')) + '</button>';
     screens.step.innerHTML = hdr('st-h') +
       '<div class="step-body"><div class="ctx">' + ctx + '</div>' +
-      '<div class="cars" style="grid-template-columns:repeat(' + n + ',1fr)" role="img" aria-label="共 ' + n + ' 節車廂' + (on ? '，建議搭第 ' + on + ' 節' : '') + '">' + cars + '</div>' +
-      '<div class="info"><div class="txt">' + esc(t.l1) + '<br>' + esc(t.l2) + (t.sub ? '<span class="s">' + esc(t.sub) + '</span>' : '') + (t.warn ? '<span class="s">' + esc(t.warn) + '</span>' : '') + '</div>' + (state.mode === 'walk' ? ICON_ES : ICON_EL) + '</div></div>' +
+      '<div class="cars" style="grid-template-columns:repeat(' + n + ',1fr)" role="img" aria-label="' + esc(t('carsAria', n, on)) + '">' + cars + '</div>' +
+      '<div class="info"><div class="txt">' + esc(tx.l1) + '<br>' + esc(tx.l2) + (tx.sub ? '<span class="s">' + esc(tx.sub) + '</span>' : '') + (tx.warn ? '<span class="s">' + esc(tx.warn) + '</span>' : '') + '</div>' + (state.mode === 'walk' ? ICON_ES : ICON_EL) + '</div></div>' +
       '<div class="tail">' + tail + '</div>';
     $('st-go').addEventListener('click', function () {
       if (last) { state.route = null; state.result = null; show('home'); try { history.pushState({ screen: 'home' }, '', '#home'); } catch (e) { /* 略 */ } return; }
       state.k = k + 1; renderStep(); show('step', true);
     });
-    $('live').textContent = '第 ' + (k + 1) + ' 段，共 ' + m.rides.length + ' 段';
+    $('live').textContent = t('liveStep', k + 1, m.rides.length);
   }
+
+  /* ---------- 語言切換：首頁右上角按鈕（中文介面顯示「EN」，英文介面顯示「中」） ---------- */
+  function applyStatic() {
+    document.documentElement.lang = LANG === 'zh' ? 'zh-Hant' : 'en';
+    document.body.classList.toggle('en', LANG === 'en');
+    document.title = t('title');
+    $('home-h').innerHTML = t('homeTitle');
+    $('home-sub').textContent = t('homeSub');
+    $('modes-l').textContent = t('modes'); $('t-el').textContent = t('el'); $('t-es').textContent = t('es');
+    F.from.input.placeholder = t('phFrom'); F.from.input.setAttribute('aria-label', t('fromLabel'));
+    F.to.input.placeholder = t('phTo'); F.to.input.setAttribute('aria-label', t('toLabel'));
+    $('go').textContent = t('go');
+    $('swap').setAttribute('aria-label', t('swap'));
+    $('lang').textContent = t('langBtn'); $('lang').setAttribute('aria-label', t('langAria'));
+  }
+  function setLang(l) {
+    LANG = l; save('gg.lang', l); applyStatic();
+    ['from', 'to'].forEach(function (w) { if (state[w]) setField(w, state[w]); if (F[w].list.classList.contains('open')) renderList(w); });
+    if (state.route) { if (screens.overview.classList.contains('active')) renderOverview(); if (screens.step.classList.contains('active')) renderStep(); }
+  }
+  $('lang').addEventListener('click', function () { setLang(LANG === 'zh' ? 'en' : 'zh'); });
 
   /* ---------- 鍵盤：讓 App 高度跟著「可視範圍」（iOS 不縮小版面，只縮小 visualViewport） ---------- */
   (function () {
@@ -334,34 +435,16 @@
     vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync);
   })();
 
-  /* ---------- PWA：安裝到桌面 ---------- */
-  (function () {
-    var btn = $('install'), sheet = $('sheet'), deferred = null;
-    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-    if (!standalone) btn.hidden = false;
-    window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); deferred = ev; });   // Android／桌面 Chrome：可直接跳出安裝視窗
-    window.addEventListener('appinstalled', function () { btn.hidden = true; sheet.hidden = true; deferred = null; });
-    var iOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    btn.addEventListener('click', function () {
-      if (deferred) { deferred.prompt(); deferred.userChoice.then(function () { deferred = null; }); return; }
-      $('sheet-steps').innerHTML = iOS
-        ? '<li>用 <b>Safari</b> 開啟本頁</li><li>點下方的<b>分享</b>按鈕</li><li>選<b>「加入主畫面」</b>，再按「新增」</li>'
-        : '<li>點瀏覽器右上角的<b>選單</b></li><li>選<b>「安裝應用程式」</b>或<b>「加到主畫面」</b></li><li>（若沒有這個選項，請改用 Chrome 開啟）</li>';
-      sheet.hidden = false; $('sheet-ok').focus();
-    });
-    function close() { sheet.hidden = true; btn.focus(); }
-    $('sheet-ok').addEventListener('click', close);
-    sheet.addEventListener('pointerdown', function (ev) { if (ev.target === sheet) close(); });
-    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !sheet.hidden) close(); });
-    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* 不支援或失敗：照常使用 */ }); });
-    }
-  })();
+  /* ---------- PWA：Service Worker（離線可開） ---------- */
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* 不支援或失敗：照常使用 */ }); });
+  }
 
   /* ---------- 初始化 ---------- */
   var last = load('gg.v1', null), mo = load('gg.modes', null);
+  applyStatic();
   if (last) { if (ST.has(last.from)) setField('from', last.from); if (ST.has(last.to)) setField('to', last.to); }
   if (mo) { $('m-el').checked = !!mo.el; $('m-es').checked = !!mo.es; }
   try { history.replaceState({ screen: 'home' }, '', '#home'); } catch (e) { /* 略 */ }
-  window.__gg = { state: state, show: show, renderOverview: renderOverview, renderStep: renderStep, setField: setField };   // 供偵錯
+  window.__gg = { state: state, show: show, renderOverview: renderOverview, renderStep: renderStep, setField: setField, setLang: setLang };   // 供偵錯
 })();
