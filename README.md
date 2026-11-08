@@ -40,6 +40,8 @@ python -m http.server 8765 --directory app
 首頁 ──路線生成──▶ 總覽 ──確定行程──▶ 第 1 段 ──下一步──▶ … ──▶ 最後一段 ──結束──▶ 首頁
 ```
 
+**即時到站（選用）：** `worker/` 是 Cloudflare Worker，代抓 TDX 即時到離站並快取；部署後把網址填入 `app/config.js` 即啟用，沒設定時只用班表。見 [worker/README.md](worker/README.md)。
+
 ## 專案結構
 
 ```

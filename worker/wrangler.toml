@@ -1,0 +1,9 @@
+# Cloudflare Workers：代抓 TDX 臺北捷運即時到離站（LiveBoard），快取後給網頁用。
+# 金鑰不放在這裡，用 `npx wrangler secret put TDX_CLIENT_ID` / `TDX_CLIENT_SECRET` 設定（見 README.md）。
+name = "guagua-live"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# 允許呼叫的網站來源（逗號分隔）；其他網站的瀏覽器會被 CORS 擋下
+ALLOWED_ORIGINS = "https://noeatguagua.github.io,http://localhost:8765"

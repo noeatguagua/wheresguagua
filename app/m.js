@@ -39,7 +39,7 @@
       carsAria: function (n, on) { return '共 ' + n + ' 節車廂' + (on ? '，建議搭第 ' + on + ' 節' : ''); },
       liveBest: function (m) { return '最佳路線約 ' + m + ' 分鐘'; }, liveStep: function (k, n) { return '第 ' + k + ' 段，共 ' + n + ' 段'; },
       routeAria: function (a, b) { return '從' + a + '到' + b; },
-      eta: '到站時間', etaEst: '預估', lastTrain: '末班車已過', depAt: '發車', soon: '即將進站', minUnitEta: ' 分'
+      eta: '到站時間', etaEst: '預估', lastTrain: '末班車已過', depAt: '發車', soon: '即將進站', minUnitEta: ' 分', liveTag: '即時'
     },
     en: {
       title: "Where to, Guagua?", homeTitle: 'Where to,<br>Guagua?', homeSub: 'Enter your origin and destination for the best route',
@@ -66,7 +66,7 @@
       carsAria: function (n, on) { return n + ' cars' + (on ? ', suggested car ' + on : ''); },
       liveBest: function (m) { return 'Best route, about ' + m + ' minutes'; }, liveStep: function (k, n) { return 'Leg ' + k + ' of ' + n; },
       routeAria: function (a, b) { return 'From ' + a + ' to ' + b; },
-      eta: 'Arrival in', etaEst: 'est.', lastTrain: 'Last train has left', depAt: 'dep.', soon: 'Arriving now', minUnitEta: ' min'
+      eta: 'Arrival in', etaEst: 'est.', lastTrain: 'Last train has left', depAt: 'dep.', soon: 'Arriving now', minUnitEta: ' min', liveTag: 'live'
     }
   };
   function t(k, a, b) { var s = STR[LANG][k]; if (s == null) s = STR.zh[k]; return typeof s === 'function' ? s(a, b) : s; }
@@ -403,7 +403,8 @@
     if (s < 60) { el.classList.add('small'); el.textContent = t('soon'); return; }
     el.classList.remove('small'); el.innerHTML = '<span class="m">' + Math.floor(s / 60) + '</span><span class="u">' + esc(t('minUnitEta')) + '</span>';
   }
-  function stopEta() { etaToken++; if (etaTimer) { clearInterval(etaTimer); etaTimer = null; } }
+  var livePoll = null, live = null;
+  function stopEta() { etaToken++; if (etaTimer) { clearInterval(etaTimer); etaTimer = null; } if (livePoll) { clearInterval(livePoll); livePoll = null; } }
   function nextDeparture(rd, readySec, dayKey) {
     var code = codeOf(rd.from, rd.line), groups = TT && TT[code]; if (!groups) return null;
     var towards = String(rd.towards || '').replace(/臺/g, '台'), dir = null;
@@ -425,28 +426,40 @@
     var el = $('eta'); if (!el || !state.route) return;
     var tag = $('eta-tag'), clock = $('eta-clock'), token = etaToken;
     var base = state.svcBase, dayKey = (function (d) { return d === 0 ? 'su' : d === 6 ? 'sa' : 'wd'; })(new Date(base + 8 * 36e5).getUTCDay());
-    var rides = build().rides, k = state.k;
+    var rides = build().rides, k = state.k, liveUrl = (window.GUAGUA_CONFIG || {}).liveUrl;
+    live = null;
+    function fetchLive() {                                           // 向 Worker 取即時到站（Worker 端有快取，這裡每 15 秒一次）
+      fetch(liveUrl, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (token === etaToken && j && j.rows) live = j; }).catch(function () { /* 失敗就繼續用班表 */ });
+    }
+    if (liveUrl) { fetchLive(); livePoll = setInterval(fetchLive, 15000); }
+    function liveDep(r, base) {                                      // 這一站、這個方向最近一班的即時進站時刻（營運日秒）；沒有就 null
+      if (!live) return null;
+      var code = codeOf(r.from, r.line), tw = String(r.towards || '').replace(/臺/g, '台'), best = null;
+      live.rows.forEach(function (x) { if (x.s === code && x.d === tw && x.a >= Date.now() - 5000 && (best == null || x.a < best)) best = x.a; });
+      return best == null ? null : (best - base * 1) / 1000;
+    }
     loadTT().then(function () {
       if (token !== etaToken) return;                                               // 已離開這一頁
       var legs = [];                                                                  // 各段班表（分鐘陣列）或 null
       for (var i = 0; i <= k; i++) legs.push(nextDeparture(rides[i].ride, 0, dayKey));
       function chain(nowSec) {
-        var dep = null, est = false, last = false;
+        var dep = null, est = false, last = false, usedLive = false;
         for (var i = 0; i <= k; i++) {
           var r = rides[i].ride, ready = i === 0 ? nowSec : dep + rides[i - 1].ride.rideMin * 60 + (rides[i].transfer ? rides[i].transfer.estimatedMin * 60 : 0);
-          var mins = legs[i], d = null;
-          if (mins && mins.length) { for (var j = 0; j < mins.length; j++) if (mins[j] * 60 >= ready) { d = mins[j] * 60; break; } if (d == null) return { last: true }; }
+          var mins = legs[i], d = null, ld = i === 0 ? liveDep(r, base) : null;
+          if (ld != null) { d = ld; usedLive = true; }
+          else if (mins && mins.length) { for (var j = 0; j < mins.length; j++) if (mins[j] * 60 >= ready) { d = mins[j] * 60; break; } if (d == null) return { last: true }; }
           else { est = true; d = ready + ((r.board && r.board.waitMin) || 0) * 60; }
           dep = d;
         }
-        return { dep: dep, est: est };
+        return { dep: dep, est: est, live: usedLive };
       }
       function tick() {
         var nowSec = (Date.now() - base) / 1000, c = chain(nowSec);
-        tag.textContent = c.est ? t('etaEst') : '';
+        tag.textContent = c.est ? t('etaEst') : c.live ? t('liveTag') : '';
         if (c.last) { el.classList.add('small'); el.textContent = t('lastTrain'); clock.textContent = ''; return; }
         showMin(el, Math.max(0, Math.round(c.dep - nowSec)));
-        if (c.est) clock.textContent = ''; else { var hm = Math.floor(c.dep / 60) % 1440; clock.textContent = pad2(Math.floor(hm / 60)) + ':' + pad2(hm % 60) + ' ' + t('depAt'); }
+        if (c.est || c.live) clock.textContent = ''; else { var hm = Math.floor(c.dep / 60) % 1440; clock.textContent = pad2(Math.floor(hm / 60)) + ':' + pad2(hm % 60) + ' ' + t('depAt'); }
       }
       tick(); etaTimer = setInterval(tick, 1000);
     });

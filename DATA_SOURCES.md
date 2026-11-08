@@ -13,6 +13,7 @@
 - 用於：站間行車時間、轉乘時間、有電梯的出口
 
 - 各站發車班表：`StationTimeTable`（764 筆，抓取 2026-11-08，腳本 [tools/fetch_timetable.py](tools/fetch_timetable.py)），精簡成 [app/timetable.js](app/timetable.js)（[tools/build_timetable.py](tools/build_timetable.py)）；原始檔 `data/tdx_raw/` 不進版控。**不含文湖線**（TDX 此資料集沒有 BR），只有分鐘精度，不含國定假日。
+- 即時到離站：`LiveBoard/TRTC`，經 [worker/](worker/) 代抓與快取，不存進程式庫。
 - 站名英文譯名：取自 TDX 各資料的 `StationName.En`（109 站），存於 [app/stations_en.js](app/stations_en.js)。
 
 ### data.taipei 臺北市資料大平臺

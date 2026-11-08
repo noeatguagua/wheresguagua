@@ -15,3 +15,8 @@ tests/golden/
 
 # TDX 班表原始檔（體積大，由 tools/fetch_timetable.py 取得）
 data/tdx_raw/
+
+# Cloudflare Worker
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
