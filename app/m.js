@@ -204,7 +204,7 @@
     f.list.classList.add('open');
     f.input.setAttribute('aria-expanded', 'true');
     place(w);
-    var cur = f.list.querySelector('.cur'); if (cur && !q) f.list.scrollTop = Math.max(0, cur.offsetTop - 120);
+    f.list.scrollTop = 0;   /* 剛展開一律停在最上面（不跳到已選站）；之後使用者自己滑動不受限 */
     document.querySelector('.app').classList.toggle('kb', COARSE);
   }
   /* 選單的方向與最大高度：以 visualViewport（扣掉鍵盤）與外框的交集為準；下方空間不足就改往上開 */
