@@ -217,7 +217,7 @@
     f.list.classList.toggle('up', up);
     f.list.style.setProperty('--mh', Math.max(110, Math.floor(up ? above : below)) + 'px');
   }
-  function closeList(w) { var f = F[w]; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); }
+  function closeList(w) { var f = F[w]; f.typing = false; if (COARSE) f.input.readOnly = true; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); }
   function move(w, d) {
     var f = F[w]; if (!f.items.length) return;
     f.active = (f.active + d + f.items.length) % f.items.length;
@@ -233,7 +233,12 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { f.dirty = false; closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
+    f.input.addEventListener('focus', function () { if (COARSE && !f.typing) f.input.readOnly = true; f.dirty = false; closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
+    /* 手機：第一下只展開下拉（唯讀、不跳鍵盤），清單已開時再點一下輸入框才解鎖輸入 */
+    f.input.addEventListener('pointerdown', function () { f.wasOpen = f.list.classList.contains('open'); });
+    f.input.addEventListener('click', function () {
+      if (COARSE && f.input.readOnly && f.wasOpen) { f.typing = true; f.input.readOnly = false; f.input.blur(); f.input.focus(); }
+    });
     f.input.addEventListener('input', function () { f.dirty = true; state[w] = null; f.code.textContent = ''; setErr(''); renderList(w); });
     /* 選單的開關不再綁輸入框焦點：iOS 再點輸入框、或收鍵盤都會讓它失焦，那時選單必須留著讓人滑。
        只在「選了站」「點選單與欄位以外」「Esc」時才收起（見 choose、document pointerdown、keydown）。 */
