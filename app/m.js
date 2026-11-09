@@ -217,7 +217,17 @@
     f.list.classList.toggle('up', up);
     f.list.style.setProperty('--mh', Math.max(110, Math.floor(up ? above : below)) + 'px');
   }
-  function closeList(w) { var f = F[w]; f.typing = false; if (COARSE) f.input.readOnly = true; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); }
+  /* 選單全部收起後，把首頁還原到原本的版面位置（展開時為了讓欄位在可視範圍而捲動過） */
+  function restoreHome() {
+    function reset() {
+      if (F.from.list.classList.contains('open') || F.to.list.classList.contains('open')) return;
+      var sc = document.querySelector('#home .scroll'); if (sc) sc.scrollTop = 0;
+      for (var el = document.querySelector('#home'); el; el = el.parentElement) { if (el.scrollTop) el.scrollTop = 0; if (el.scrollLeft) el.scrollLeft = 0; }
+      window.scrollTo(0, 0);
+    }
+    reset(); setTimeout(reset, 120); setTimeout(reset, 450);
+  }
+  function closeList(w) { var f = F[w]; f.typing = false; if (COARSE) f.input.readOnly = true; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); restoreHome(); }
   function move(w, d) {
     var f = F[w]; if (!f.items.length) return;
     f.active = (f.active + d + f.items.length) % f.items.length;
