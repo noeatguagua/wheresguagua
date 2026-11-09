@@ -13,7 +13,7 @@
   --ease: cubic-bezier(.22, .8, .24, 1);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--navy); overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; background: var(--navy); overscroll-behavior: none; overflow: hidden; overflow: clip; }
 body {
   color: var(--ink); font-family: var(--serif); font-weight: 700;
   -webkit-text-size-adjust: 100%; overflow: hidden; overscroll-behavior: none;
@@ -23,7 +23,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 
 .app { position: fixed; top: var(--app-top, 0px); bottom: auto; height: var(--app-h, 100dvh); left: 50%; width: var(--aw); transform: translateX(-50%); }
 .frame {
-  position: absolute; overflow: hidden;
+  position: absolute; overflow: hidden; overflow: clip;   /* clip：連程式化捲動（輸入框 focus、scrollIntoView）都推不動外框與背景 */
   top: max(var(--inset), env(safe-area-inset-top)); bottom: max(var(--inset), env(safe-area-inset-bottom));
   left: var(--inset); right: var(--inset);
   border: var(--bw) solid #fff; border-radius: calc(22 * var(--u));
@@ -32,7 +32,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   position: absolute; pointer-events: none; z-index: 0;
   top: calc(-1 * (max(var(--inset), env(safe-area-inset-top)) + var(--bw)));
   left: calc(-1 * (var(--inset) + var(--bw)));
-  width: var(--aw); height: 100dvh;
+  width: var(--aw); height: max(var(--app-h, 100dvh), 100lvh, 100vh);
   background: url("assets/bg.webp") center / cover no-repeat;
 }
 

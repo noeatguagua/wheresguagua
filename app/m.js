@@ -203,7 +203,7 @@
     f.list.innerHTML = html;
     f.list.classList.add('open');
     f.input.setAttribute('aria-expanded', 'true');
-    document.querySelector('.app').classList.toggle('kb', COARSE);
+    document.querySelector('.app').classList.toggle('kb', COARSE && !!f.typing);
     place(w);
     f.list.scrollTop = 0;   /* 剛展開一律停在最上面（不跳到已選站）；之後使用者自己滑動不受限 */
   }
@@ -213,7 +213,7 @@
     var vv = window.visualViewport, vt = vv ? vv.offsetTop : 0, vb = vt + (vv ? vv.height : innerHeight);
     var fr = document.querySelector('.frame').getBoundingClientRect(), fb = f.field.getBoundingClientRect();
     var hi = Math.min(fr.bottom, vb) - 8, bottom = fb.bottom;
-    if (COARSE) {   /* 手機會把欄位捲到捲動區頂端：直接以「捲完之後」的位置算高度，展開動畫中就不必再改 */
+    if (COARSE && f.typing) {   /* 手機開始輸入（鍵盤升起）時會把欄位捲到捲動區頂端：直接以「捲完之後」的位置算高度，展開動畫中就不必再改 */
       var sc = document.querySelector('#home .scroll'), st = sc.getBoundingClientRect();
       var room = Math.max(0, sc.scrollHeight - sc.clientHeight - sc.scrollTop);
       bottom = Math.max(st.top, fb.top - room) + fb.height;
@@ -246,7 +246,7 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { if (COARSE && !f.typing) f.input.readOnly = true; f.dirty = false; closeList(w === 'from' ? 'to' : 'from', true); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); });
+    f.input.addEventListener('focus', function () { if (COARSE && !f.typing) f.input.readOnly = true; f.dirty = false; closeList(w === 'from' ? 'to' : 'from', true); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); if (!COARSE || f.typing) f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); });
     /* 手機：第一下只展開下拉（唯讀、不跳鍵盤），清單已開時再點一下輸入框才解鎖輸入 */
     f.input.addEventListener('pointerdown', function () { f.wasOpen = f.list.classList.contains('open'); });
     f.input.addEventListener('click', function () {
@@ -287,7 +287,7 @@
     var y0 = 0;
     document.addEventListener('touchstart', function (e) { y0 = e.touches[0].clientY; }, { passive: true });
     document.addEventListener('touchmove', function (e) {
-      if (!document.querySelector('.app.kb')) return;
+      if (!document.querySelector('.suggest.open')) return;
       var ul = e.target.closest && e.target.closest('.suggest.open');
       if (!ul) { e.preventDefault(); return; }
       var dy = e.touches[0].clientY - y0;
