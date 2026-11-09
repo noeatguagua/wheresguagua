@@ -64,6 +64,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 #home .head { padding: calc(10 * var(--u)) calc(15 * var(--u)) 0; }
 #home .sub { margin: calc(9 * var(--u)) 0 0 calc(4 * var(--u)); font-size: calc(17 * var(--u)); letter-spacing: -.01em; }
 #home .scroll { display: flex; flex-direction: column; }
+.kb #home .scroll { overflow-y: hidden; }   /* 選單開著時背景不能被手指拖動（程式化捲動仍可） */
 .kb #home .form { padding-bottom: calc(320 * var(--u)); }   /* 鍵盤開啟時留捲動空間，讓欄位能捲到可視範圍頂端 */
 #home .form { padding: calc(24 * var(--u)) calc(40.5 * var(--u)) calc(55 * var(--u)) calc(47 * var(--u)); flex: 1 0 auto; display: flex; flex-direction: column; }
 #home .form-top { flex: 1 1 auto; }
@@ -104,8 +105,6 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 }
 .suggest.open { max-height: min(var(--mh, 9999px), calc(560 * var(--u))); opacity: 1; visibility: visible; transform: none; overflow-y: auto; transition-delay: 0s; }
 .suggest { top: calc(100% + 8 * var(--u)); touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.suggest.up { top: auto; bottom: calc(100% + 8 * var(--u)); transform: translateY(calc(6 * var(--u))); }
-.suggest.up.open { transform: none; }
 .suggest li { display: flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(9 * var(--u)) calc(18 * var(--u)); min-height: calc(46 * var(--u)); cursor: pointer; font-size: calc(19 * var(--u)); }
 .suggest li[role="option"] + li[role="option"] { border-top: calc(1 * var(--u)) solid rgba(255, 255, 255, .22); }
 .suggest li[aria-selected="true"], .suggest li[role="option"]:active { background: rgba(255, 255, 255, .18); }

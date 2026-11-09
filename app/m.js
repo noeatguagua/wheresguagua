@@ -203,19 +203,22 @@
     f.list.innerHTML = html;
     f.list.classList.add('open');
     f.input.setAttribute('aria-expanded', 'true');
+    document.querySelector('.app').classList.toggle('kb', COARSE);
     place(w);
     f.list.scrollTop = 0;   /* 剛展開一律停在最上面（不跳到已選站）；之後使用者自己滑動不受限 */
-    document.querySelector('.app').classList.toggle('kb', COARSE);
   }
   /* 選單的方向與最大高度：以 visualViewport（扣掉鍵盤）與外框的交集為準；下方空間不足就改往上開 */
   function place(w) {
     var f = F[w]; if (!f.list.classList.contains('open')) return;
     var vv = window.visualViewport, vt = vv ? vv.offsetTop : 0, vb = vt + (vv ? vv.height : innerHeight);
     var fr = document.querySelector('.frame').getBoundingClientRect(), fb = f.field.getBoundingClientRect();
-    var lo = Math.max(fr.top, vt) + 8, hi = Math.min(fr.bottom, vb) - 8;
-    var below = hi - fb.bottom - 8, above = fb.top - lo - 8, up = below < 190 && above > below;
-    f.list.classList.toggle('up', up);
-    f.list.style.setProperty('--mh', Math.max(110, Math.floor(up ? above : below)) + 'px');
+    var hi = Math.min(fr.bottom, vb) - 8, bottom = fb.bottom;
+    if (COARSE) {   /* 手機會把欄位捲到捲動區頂端：直接以「捲完之後」的位置算高度，展開動畫中就不必再改 */
+      var sc = document.querySelector('#home .scroll'), st = sc.getBoundingClientRect();
+      var room = Math.max(0, sc.scrollHeight - sc.clientHeight - sc.scrollTop);
+      bottom = Math.max(st.top, fb.top - room) + fb.height;
+    }
+    f.list.style.setProperty('--mh', Math.max(110, Math.floor(hi - bottom - 8)) + 'px');
   }
   /* 選單全部收起後，把首頁還原到原本的版面位置（展開時為了讓欄位在可視範圍而捲動過） */
   function restoreHome() {
@@ -227,7 +230,7 @@
     }
     reset(); setTimeout(reset, 120); setTimeout(reset, 450);
   }
-  function closeList(w) { var f = F[w]; f.typing = false; if (COARSE) f.input.readOnly = true; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); restoreHome(); }
+  function closeList(w, keepScroll) { var f = F[w]; f.typing = false; if (COARSE) f.input.readOnly = true; f.list.classList.remove('open'); f.input.setAttribute('aria-expanded', 'false'); f.input.removeAttribute('aria-activedescendant'); if (!F.from.list.classList.contains('open') && !F.to.list.classList.contains('open')) document.querySelector('.app').classList.remove('kb'); if (!keepScroll) restoreHome(); }
   function move(w, d) {
     var f = F[w]; if (!f.items.length) return;
     f.active = (f.active + d + f.items.length) % f.items.length;
@@ -243,7 +246,7 @@
 
   ['from', 'to'].forEach(function (w) {
     var f = F[w];
-    f.input.addEventListener('focus', function () { if (COARSE && !f.typing) f.input.readOnly = true; f.dirty = false; closeList(w === 'from' ? 'to' : 'from'); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); setTimeout(function () { f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); setTimeout(function () { place(w); }, 350); }, 300); });
+    f.input.addEventListener('focus', function () { if (COARSE && !f.typing) f.input.readOnly = true; f.dirty = false; closeList(w === 'from' ? 'to' : 'from', true); f.field.classList.remove('resolved'); f.input.style.letterSpacing = ''; f.input.style.marginRight = ''; f.input.select(); renderList(w); f.field.scrollIntoView({ block: COARSE ? 'start' : 'nearest', behavior: 'smooth' }); });
     /* 手機：第一下只展開下拉（唯讀、不跳鍵盤），清單已開時再點一下輸入框才解鎖輸入 */
     f.input.addEventListener('pointerdown', function () { f.wasOpen = f.list.classList.contains('open'); });
     f.input.addEventListener('click', function () {
@@ -278,6 +281,19 @@
       choose(w, f.items[+li.id.slice(f.list.id.length + 1)]);
     });
   });
+
+  /* 選單開著時背景不跟著動：選單以外的觸控拖曳一律擋掉；選單本身捲到頭也不把動作傳給背景 */
+  (function () {
+    var y0 = 0;
+    document.addEventListener('touchstart', function (e) { y0 = e.touches[0].clientY; }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!document.querySelector('.app.kb')) return;
+      var ul = e.target.closest && e.target.closest('.suggest.open');
+      if (!ul) { e.preventDefault(); return; }
+      var dy = e.touches[0].clientY - y0;
+      if (ul.scrollHeight <= ul.clientHeight + 1 || (dy > 0 && ul.scrollTop <= 0) || (dy < 0 && ul.scrollTop + ul.clientHeight >= ul.scrollHeight - 1)) e.preventDefault();
+    }, { passive: false });
+  })();
 
   document.addEventListener('pointerdown', function (ev) {
     if (ev.target.closest('.stack')) return;
