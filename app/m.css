@@ -116,7 +116,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .suggest .tr { flex: none; max-width: 46%; font-size: calc(13 * var(--u)); font-weight: 500; opacity: .82; text-align: right; line-height: 1.25; }
 .suggest .none { cursor: default; font-weight: 500; font-size: calc(15 * var(--u)); }
 /* 篩選鈕：全部＋各線（同 annotator）；選中者填白、藍字，與車廂格的選中狀態一致 */
-.suggest .chips { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: calc(6 * var(--u)); padding: calc(10 * var(--u)) calc(12 * var(--u)); min-height: 0; background: #000c86; border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, .3); cursor: default; }
+.suggest .chips { display: flex; flex-wrap: wrap; gap: calc(6 * var(--u)); padding: calc(10 * var(--u)) calc(12 * var(--u)); min-height: 0; background: #000c86; border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, .3); cursor: default; }
 .chip { flex: none; display: inline-flex; align-items: center; gap: calc(5 * var(--u)); height: calc(33.6 * var(--u)); padding: 0 calc(9.6 * var(--u)); border: var(--bw) solid #fff; border-radius: calc(16.8 * var(--u)); font-size: calc(15 * var(--u)); font-weight: 700; color: #fff; transition: background .2s, color .2s; }
 .chip i { width: calc(9.6 * var(--u)); height: calc(9.6 * var(--u)); border-radius: 50%; border: calc(1 * var(--u)) solid rgba(255, 255, 255, .85); }
 .chip.on { background: #fff; color: var(--navy); }
