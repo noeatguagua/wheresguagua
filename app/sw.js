@@ -2,7 +2,7 @@
  * 策略：同源 GET 一律「網路優先、失敗才用快取」，所以網站更新後會立刻拿到新版，沒網路時才用上次的快取。
  * 跨來源請求（字體、即時到站 Worker）不經過這裡，交給瀏覽器。
  * 改了預快取清單或策略時，請把 VERSION 加一。 */
-const VERSION = 'v26';
+const VERSION = 'v27';
 const CACHE = 'guagua-' + VERSION;
 const PRECACHE = ['m.html', 'm.css', 'm.js', 'config.js', 'engine.js', 'data.js', 'data.private.js', 'manifest.webmanifest',
   'assets/bg.webp', 'assets/elevator.svg', 'assets/escalator.png',
